@@ -10,12 +10,22 @@ import (
 	"syscall"
 	"time"
 	"flag"
+	"strings"
 )
 
 func main() {
 
+	for _, arg := range os.Args {
+		if strings.EqualFold(arg,"version") {
+			println("0.4.0")
+			os.Exit(0)
+		}
+	}
+
+
 	// load the config file
 	configFile := flag.String("config", "/etc/metricsd.conf", "metrics config")
+
 
 	logger := l.NewSimpleLogger("main-init")
 	config, err := c.LoadConfig(*configFile, logger)
