@@ -5,6 +5,7 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	nt "github.com/cloudurable/metricsd/gatherer/nodetool"
 	"strings"
+	"fmt"
 )
 
 type NodetoolMetricGatherer struct {
@@ -30,12 +31,14 @@ func NewNodetoolMetricGatherers(logger l.Logger, config *c.Config) []*NodetoolMe
 		return nil
 	}
 
+	logger = c.EnsureLogger(logger, config.Debug, c.PROVIDER_NODETOOL, c.FLAG_NODETOOL)
+
 	gatherers := []*NodetoolMetricGatherer{}
 	for _, nodeFunction := range config.NodetoolFunctions {
 		if nodetoolFunctionSupported(nodeFunction) {
 			gatherers = append(gatherers, newNodetoolMetricGatherer(logger, config, nodeFunction))
 		} else {
-			logger.Warn("Unsupported or unknown Nodetool function", nodeFunction)
+			logger.Warn("Unsupported or unknown Nodetool function", &nodeFunction)
 		}
 	}
 
