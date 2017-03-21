@@ -5,7 +5,6 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	nt "github.com/cloudurable/metricsd/gatherer/nodetool"
 	"strings"
-	"fmt"
 )
 
 type NodetoolMetricGatherer struct {
