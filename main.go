@@ -50,7 +50,7 @@ func run(configFileName *string) {
 
 	logger, config := prepare(configFileName, "main-run")
 
-	logger = c.GetLogger(config.Debug, "main", "MT_MAIN_DEBUG")
+	logger = c.GetLogger(config.Debug, "main")
 	logger.Debug("Init:", c.ObjectToString(config))
 
 	// begin the work
@@ -63,7 +63,7 @@ func run(configFileName *string) {
 
 	var gatherers []c.MetricsGatherer
 	var repeaters []c.MetricsRepeater
-	var load bool = true
+	var configChanged bool = true
 
 	for {
 		select {
@@ -72,8 +72,8 @@ func run(configFileName *string) {
 			os.Exit(0)
 
 		case <-timer.C:
-			if load {
-				load = false
+			if configChanged {
+				configChanged = false
 				gatherers = g.LoadGatherers(config)
 				repeaters = r.LoadRepeaters(config)
 			}
@@ -85,17 +85,16 @@ func run(configFileName *string) {
 			if newConfig, err := c.LoadConfig(*configFileName, logger); err != nil {
 				logger.Error("Error reading config, changes ignored!", err)
 			} else {
-				load = !c.ConfigEquals(config, newConfig)
-				if load {
+                changed := !c.ConfigEquals(config, newConfig)
+				if changed {
 					config = newConfig
 					interval, intervalConfigRefresh, debug = readRunConfig(config)
 					if debug {
 						logger.Debug("Changed:", c.ObjectToString(config))
 					}
-				} else {
-					if debug {
-						logger.Debug("Same Config")
-					}
+					configChanged = true
+				} else if debug {
+                    logger.Debug("Same Config")
 				}
 			}
 			configTimer.Reset(intervalConfigRefresh)

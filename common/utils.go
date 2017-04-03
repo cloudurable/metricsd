@@ -13,17 +13,16 @@ import (
 // ========================================================================================================================
 // LOGGING HELPERS
 // ========================================================================================================================
-func GetLogger(debug bool, name string, flag string) l.Logger {
-	return EnsureLogger(nil, debug, name, flag)
+func GetLogger(debug bool, name string) l.Logger {
+    return EnsureLogger(nil, debug, name)
 }
 
-func EnsureLogger(logger l.Logger, debug bool, name string, flag string) l.Logger {
+func EnsureLogger(logger l.Logger, debug bool, name string) l.Logger {
 	if logger == nil {
 		if debug {
-			logger = l.NewSimpleDebugLogger(name)
-		} else {
-			logger = l.GetSimpleLogger(flag, name)
+			return l.NewSimpleDebugLogger(name)
 		}
+        return l.NewSimpleLogger(name)
 	}
 	return logger
 }

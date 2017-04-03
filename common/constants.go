@@ -23,13 +23,6 @@ const (
 )
 
 const (
-	FLAG_CPU      = "MT_CPU_DEBUG"
-	FLAG_DISK     = "MT_DISK_DEBUG"
-	FLAG_FREE     = "MT_FREE_DEBUG"
-	FLAG_NODETOOL = "MT_NODETOOL_DEBUG"
-)
-
-const (
 	GATHERER_CPU      = "cpu"
 	GATHERER_DISK     = "disk"
 	GATHERER_FREE     = "free"

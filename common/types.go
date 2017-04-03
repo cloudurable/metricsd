@@ -1,5 +1,7 @@
 package common
 
+import "time"
+
 type MetricContext interface {
 	GetEnv() string
 	GetNameSpace() string
@@ -19,13 +21,14 @@ type MetricsRepeater interface {
 }
 
 type Metric struct {
-	Source     MetricValueSource
 	Type       MetricType
+    Source     MetricValueSource
 	IntValue   int64
 	FloatValue float64
 	StrValue   string
 	Name       string
 	Provider   string
+    When       time.Time
 }
 
 func newMetric(mt MetricType, mvs MetricValueSource, name string, provider string) *Metric {
@@ -34,6 +37,7 @@ func newMetric(mt MetricType, mvs MetricValueSource, name string, provider strin
 		Source:   mvs,
 		Name:     name,
 		Provider: provider,
+        When:     time.Now(),
 	}
 }
 
@@ -42,7 +46,6 @@ func NewMetricInt(mt MetricType, value int64, name string, provider string) *Met
 	m.IntValue = value
 	m.FloatValue = float64(value)
 	m.StrValue = Int64ToString(value)
-
 	return m
 }
 
@@ -51,7 +54,6 @@ func NewMetricFloat(mt MetricType, value float64, name string, provider string) 
 	m.IntValue = int64(RoundDp(value, 0))
 	m.FloatValue = value
 	m.StrValue = Float64ToString(value)
-
 	return m
 }
 

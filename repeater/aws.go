@@ -5,7 +5,6 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
-	"time"
 )
 
 type AwsCloudMetricRepeater struct {
@@ -16,10 +15,10 @@ type AwsCloudMetricRepeater struct {
 
 const debugFormat = "{\"provider\": \"%s\", \"name\": \"%s\", \"type\": %d, \"value\": %d, \"unit\": \"%s\"}"
 
-func (lr AwsCloudMetricRepeater) RepeatForContext() bool { return true }
-func (lr AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true }
-func (lr AwsCloudMetricRepeater) Verify() bool {
-    _, err := NewAWSSession(lr.config)
+func (r AwsCloudMetricRepeater) RepeatForContext() bool { return true }
+func (r AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true }
+func (r AwsCloudMetricRepeater) Verify() bool {
+    _, err := NewAWSSession(r.config)
     if err == nil {
         return true
     }
@@ -28,74 +27,20 @@ func (lr AwsCloudMetricRepeater) Verify() bool {
 
 func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics []c.Metric) error {
 
-	timestamp := aws.Time(time.Now())
-
-	createDatum := func(name string, provider string) *cloudwatch.MetricDatum {
-
-		dimensions := make([]*cloudwatch.Dimension, 0, 3)
-
-		if context.SendId() {
-			instanceIdDim := &cloudwatch.Dimension{
-				Name:  aws.String("InstanceId"),
-				Value: aws.String(cw.config.EC2InstanceId),
-			}
-			dimensions = append(dimensions, instanceIdDim)
-
-			if cw.config.IpAddress != c.EMPTY {
-				ipDim := &cloudwatch.Dimension{
-					Name:  aws.String("IpAddress"),
-					Value: aws.String(cw.config.IpAddress),
-				}
-				dimensions = append(dimensions, ipDim)
-			}
-
-			if cw.config.EC2InstanceNameTag != c.EMPTY {
-				dim := &cloudwatch.Dimension{
-					Name:  aws.String("InstanceName"),
-					Value: aws.String(cw.config.EC2InstanceNameTag),
-				}
-				dimensions = append(dimensions, dim)
-			}
-		}
-		if context.GetEnv() != c.EMPTY {
-			dim := &cloudwatch.Dimension{
-				Name:  aws.String("Environment"),
-				Value: aws.String(context.GetEnv()),
-			}
-			dimensions = append(dimensions, dim)
-		}
-
-		if context.GetRole() != c.EMPTY {
-			dim := &cloudwatch.Dimension{
-				Name:  aws.String("Role"),
-				Value: aws.String(context.GetRole()),
-			}
-			dimensions = append(dimensions, dim)
-		}
-
-		if provider != c.EMPTY {
-			dim := &cloudwatch.Dimension{
-				Name:  aws.String("Provider"),
-				Value: aws.String(provider),
-			}
-			dimensions = append(dimensions, dim)
-		}
-
-		return &cloudwatch.MetricDatum{
-			MetricName: aws.String(name),
-			Timestamp:  timestamp,
-			Dimensions: dimensions,
-		}
-	}
-
 	data := []*cloudwatch.MetricDatum{}
-
 	var err error
 
 	for index, metric := range metrics {
 
-		datum := createDatum(metric.Name, metric.Provider)
-		datum.Value = aws.Float64(metric.FloatValue)
+        dimensions := cw.createDimensions(context, metric)
+
+        datum := &cloudwatch.MetricDatum{
+            MetricName: aws.String(metric.Name),
+            Timestamp:  aws.Time(metric.When),
+            Dimensions: dimensions,
+        }
+
+        datum.Value = aws.Float64(metric.FloatValue)
 
 		switch metric.Type {
 		case c.MT_COUNT:	 datum.Unit = aws.String(cloudwatch.StandardUnitCount)
@@ -109,7 +54,7 @@ func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics
 		}
 
 		if cw.config.Debug {
-			cw.logger.Printf(debugFormat, metric.Provider, metric.Name, metric.Type, metric.FloatValue, datum.Unit)
+			cw.logger.Debugf(debugFormat, metric.Provider, metric.Name, metric.Type, metric.FloatValue, datum.Unit)
 		}
 
 		data = append(data, datum)
@@ -132,9 +77,7 @@ func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics
 					}
 				}
 			}
-
 		}
-
 	}
 
 	if len(data) > 0 {
@@ -148,9 +91,64 @@ func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics
 	return err
 }
 
+func (cw AwsCloudMetricRepeater) createDimensions(context c.MetricContext, metric c.Metric) []*cloudwatch.Dimension {
+
+    dimensions := make([]*cloudwatch.Dimension, 0, 6)
+
+    if context.SendId() {
+        instanceIdDim := &cloudwatch.Dimension{
+            Name:  aws.String("InstanceId"),
+            Value: aws.String(cw.config.EC2InstanceId),
+        }
+        dimensions = append(dimensions, instanceIdDim)
+
+        if cw.config.IpAddress != c.EMPTY {
+            ipDim := &cloudwatch.Dimension{
+                Name:  aws.String("IpAddress"),
+                Value: aws.String(cw.config.IpAddress),
+            }
+            dimensions = append(dimensions, ipDim)
+        }
+
+        if cw.config.EC2InstanceNameTag != c.EMPTY {
+            dim := &cloudwatch.Dimension{
+                Name:  aws.String("InstanceName"),
+                Value: aws.String(cw.config.EC2InstanceNameTag),
+            }
+            dimensions = append(dimensions, dim)
+        }
+    }
+
+    if context.GetEnv() != c.EMPTY {
+        dim := &cloudwatch.Dimension{
+            Name:  aws.String("Environment"),
+            Value: aws.String(context.GetEnv()),
+        }
+        dimensions = append(dimensions, dim)
+    }
+
+    if context.GetRole() != c.EMPTY {
+        dim := &cloudwatch.Dimension{
+            Name:  aws.String("Role"),
+            Value: aws.String(context.GetRole()),
+        }
+        dimensions = append(dimensions, dim)
+    }
+
+    if metric.Provider != c.EMPTY {
+        dim := &cloudwatch.Dimension{
+            Name:  aws.String("Provider"),
+            Value: aws.String(metric.Provider),
+        }
+        dimensions = append(dimensions, dim)
+    }
+
+    return dimensions
+}
+
 func NewAwsCloudMetricRepeater(config *c.Config) *AwsCloudMetricRepeater {
-    logger := lg.NewSimpleLogger("aws-repeater")
-	session, err := NewAWSSession(config)
+    logger := c.EnsureLogger(nil, config.Debug, "aws-repeater")
+	session, err := NewAWSSession(config) // this just verifies, no point in continuing if it won't connect
     if err == nil {
         logger.Critical(err)
         return nil

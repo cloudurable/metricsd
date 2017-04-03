@@ -42,7 +42,7 @@ type CpuStats struct {
 
 func NewCPUMetricsGatherer(logger l.Logger, config *c.Config) *CPUMetricsGatherer {
 
-	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_CPU, c.FLAG_CPU)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_CPU)
 	procStatPath := c.ReadConfigString("proc/stat path", config.CpuProcStat, "/proc/stat", logger)
 
 	return &CPUMetricsGatherer{

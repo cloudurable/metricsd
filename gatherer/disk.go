@@ -31,7 +31,7 @@ type diskInclude struct {
 
 func NewDiskMetricsGatherer(logger l.Logger, config *c.Config) *DiskMetricsGatherer {
 
-	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_DISK, c.FLAG_DISK)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_DISK)
 	command := 	c.ReadConfigString("df command", config.DiskCommand, "/usr/bin/df", logger)
 	fields := c.ReadConfigStringArray("disk fields", config.DiskFields, []string{DiskField_availablepct}, logger)
 	dfses := c.ReadConfigStringArray("disk file systems", config.DiskFileSystems, []string{"/dev/*"}, logger)

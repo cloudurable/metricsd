@@ -25,10 +25,11 @@ type Config struct {
 	NameSpace          string `hcl:"namespace"`
 
 	SmtpHost        string `hcl:"smtp_host"`
-	SmtpPort        string `hcl:"smtp_port"`
+	SmtpPort        int    `hcl:"smtp_port"`
 	SmtpUsername    string `hcl:"smtp_username"`
 	SmtpPassword    string `hcl:"smtp_password"`
 	SmtpFromAddress string `hcl:"smtp_from_address"`
+	SmtpIgnoreCert  bool   `hcl:"smtp_ignore_cert"`
 
 	DiskCommand     string   `hcl:"disk_command"`
 	DiskFileSystems []string `hcl:"disk_file_systems"`
@@ -67,6 +68,7 @@ func ConfigEquals(c1 *Config, c2 *Config) bool {
 		c1.SmtpUsername == c2.SmtpUsername &&
 		c1.SmtpPassword == c2.SmtpPassword &&
 		c1.SmtpFromAddress == c2.SmtpFromAddress &&
+		c1.SmtpIgnoreCert == c2.SmtpIgnoreCert &&
 
 		c1.DiskCommand == c2.DiskCommand &&
 		c1.CpuProcStat == c2.CpuProcStat &&

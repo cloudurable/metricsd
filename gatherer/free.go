@@ -15,7 +15,7 @@ type FreeMetricGatherer struct {
 
 func NewFreeMetricGatherer(logger l.Logger, config *c.Config) *FreeMetricGatherer {
 
-	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_FREE, c.FLAG_FREE)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_FREE)
 	command := c.ReadConfigString("free command", config.FreeCommand, "/usr/bin/free", logger)
 
 	return &FreeMetricGatherer{

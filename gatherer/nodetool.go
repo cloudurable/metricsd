@@ -31,7 +31,7 @@ func NewNodetoolMetricGatherers(logger l.Logger, config *c.Config) []*NodetoolMe
 		return nil
 	}
 
-	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_NODETOOL, c.FLAG_NODETOOL)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_NODETOOL)
 
 	gatherers := []*NodetoolMetricGatherer{}
 	for _, nodeFunction := range config.NodetoolFunctions {
@@ -46,7 +46,6 @@ func NewNodetoolMetricGatherers(logger l.Logger, config *c.Config) []*NodetoolMe
 }
 
 func newNodetoolMetricGatherer(logger l.Logger, config *c.Config, nodeFunction string) *NodetoolMetricGatherer {
-	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_NODETOOL, c.FLAG_NODETOOL)
     cqlshCommand := c.ReadConfigString("cqlsh command", config.CqlshCommand, "/usr/bin/cqlsh", logger)
     nodetoolCommand := c.ReadConfigString("nodetool command", config.CqlshCommand, "/usr/bin/nodetool", logger)
 
