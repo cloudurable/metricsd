@@ -15,8 +15,9 @@ func (lr ConsoleMetricsRepeater) ProcessMetrics(context c.MetricContext, metrics
 	return nil
 }
 
-func (lr ConsoleMetricsRepeater) RepeatForContext() bool { return false; }
-func (lr ConsoleMetricsRepeater) RepeatForNoIdContext() bool { return true; }
+func (lr ConsoleMetricsRepeater) RepeatForContext() bool { return false }
+func (lr ConsoleMetricsRepeater) RepeatForNoIdContext() bool { return true }
+func (lr ConsoleMetricsRepeater) Verify() bool { return true }
 
 func NewConsoleMetricsRepeater() *ConsoleMetricsRepeater {
 	return &ConsoleMetricsRepeater{}

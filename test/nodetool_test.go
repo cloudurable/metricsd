@@ -3,6 +3,7 @@ package test
 import (
 	g "github.com/cloudurable/metricsd/gatherer"
 	c "github.com/cloudurable/metricsd/common"
+	nt "github.com/cloudurable/metricsd/gatherer/nodetool"
 	"testing"
 )
 
@@ -14,7 +15,7 @@ func TestNodetool(test *testing.T) {
 	}
 
 	gatherers := g.NewNodetoolMetricGatherers(nil, &config)
-	if (len(gatherers) > 0) {
+	if len(gatherers) > 0 {
 		test.Errorf("Expecting no gatherers")
 	}
 
@@ -24,8 +25,7 @@ func TestNodetool(test *testing.T) {
 
 	config = c.Config{
 		Debug: false,
-		//NodetoolFunctions: []string{"cfstats", "tpstats", "gcstats", "getlogginglevels", "netstats", "gettimeout", "proxyhistograms", "listsnapshots", "statuses", "getstreamthroughput"},
-		NodetoolFunctions: []string{"getstreamthroughput", "statuses"},
+		NodetoolFunctions: nt.NodetoolAllSupportedFunctions,
 	}
 
 	gatherers = g.NewNodetoolMetricGatherers(nil, &config)

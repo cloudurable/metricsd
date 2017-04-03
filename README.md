@@ -104,6 +104,9 @@ namespace="Cassandra Cluster"
 #free_command = "/usr/mybin/free"
 
 # ------------------------------------------------------------
+# cqlsh_command string
+#   default:        /usr/bin/cqlsh
+#
 # nodetool_command string
 #   default:        /usr/bin/nodetool
 #   darwin example: /usr/local/bin/nodetool
@@ -112,7 +115,8 @@ namespace="Cassandra Cluster"
 #    specify nodetool_functions as array
 #      functions: cfstats compactionstats gcstats netstats tpstats getlogginglevels proxyhistograms listsnapshots, statuses
 # ------------------------------------------------------------
-#nodetool_command = "/usr/mybin/nodetool"
+#cqlsh_command = "/usr/bin/cqlsh"
+#nodetool_command = "/usr/bin/nodetool"
 #nodetool_functions = ["tpstats", "gcstats"]
 ```
 
@@ -193,6 +197,7 @@ The best doc is a working example.
 
 ### Disk metrics
 * `dUVol<VOLUME_NAME>AvailPer` - percentage of disk space left (per volume)
+
 
 ### Mem metrics
 * `mFreeLvl` - free memory in kilobytes

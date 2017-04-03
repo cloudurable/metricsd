@@ -9,9 +9,9 @@ import (
 func TestDisk(test *testing.T) {
 
 	config := c.Config{
-		Debug: false,
+		Debug: true,
 		DiskCommand: "df",
-		DiskFileSystems: []string{"/dev/*", "udev"},
+		DiskFileSystems: []string{"/dev/*", "udev", "C:*"},
 		DiskFields: []string{"total", "used", "available", "usedpct", "availablepct", "capacitypct", "mount"},
 	}
 

@@ -23,25 +23,30 @@ const (
 )
 
 const (
-	PROVIDER_CPU      = "cpu"
-	PROVIDER_DISK     = "disk"
-	PROVIDER_FREE     = "free"
-	PROVIDER_NODETOOL = "nodetool"
+	FLAG_CPU      = "MT_CPU_DEBUG"
+	FLAG_DISK     = "MT_DISK_DEBUG"
+	FLAG_FREE     = "MT_FREE_DEBUG"
+	FLAG_NODETOOL = "MT_NODETOOL_DEBUG"
+)
 
-	PROVIDER_RAM      = "ram"
+const (
+	GATHERER_CPU      = "cpu"
+	GATHERER_DISK     = "disk"
+	GATHERER_FREE     = "free"
+	GATHERER_NODETOOL = "nodetool"
+)
+
+const (
+	PROVIDER_DISK     = "disk"
+	PROVIDER_CPU      = "cpu"
+	PROVIDER_NODETOOL = "nodetool"
+	PROVIDER_FREE     = "free"
 )
 
 const (
 	REPEATER_AWS    = "aws"
 	REPEATER_LOGGER = "logger"
 	REPEATER_CONSOLE = "console"
-)
-
-const (
-	FLAG_CPU      = "MT_CPU_DEBUG"
-	FLAG_DISK     = "MT_DISK_DEBUG"
-	FLAG_FREE     = "MT_FREE_DEBUG"
-	FLAG_NODETOOL = "MT_NODETOOL_DEBUG"
 )
 
 type MetricValueSource int8

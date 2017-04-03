@@ -1,17 +1,18 @@
 package gatherer
 
 import (
-	l "github.com/advantageous/go-logback/logging"
+	l "github.com/cloudurable/simplelog/logging"
 	c "github.com/cloudurable/metricsd/common"
 	nt "github.com/cloudurable/metricsd/gatherer/nodetool"
 	"strings"
 )
 
 type NodetoolMetricGatherer struct {
-	logger            l.Logger
-	debug             bool
-	command           string
-	nodeFunction      string
+	logger          l.Logger
+	debug           bool
+    cqlshCommand    string
+	nodetoolCommand string
+	nodeFunction    string
 }
 
 func nodetoolFunctionSupported(nodeFunction string) bool {
@@ -30,7 +31,7 @@ func NewNodetoolMetricGatherers(logger l.Logger, config *c.Config) []*NodetoolMe
 		return nil
 	}
 
-	logger = c.EnsureLogger(logger, config.Debug, c.PROVIDER_NODETOOL, c.FLAG_NODETOOL)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_NODETOOL, c.FLAG_NODETOOL)
 
 	gatherers := []*NodetoolMetricGatherer{}
 	for _, nodeFunction := range config.NodetoolFunctions {
@@ -45,31 +46,17 @@ func NewNodetoolMetricGatherers(logger l.Logger, config *c.Config) []*NodetoolMe
 }
 
 func newNodetoolMetricGatherer(logger l.Logger, config *c.Config, nodeFunction string) *NodetoolMetricGatherer {
-	logger = c.EnsureLogger(logger, config.Debug, c.PROVIDER_NODETOOL, c.FLAG_NODETOOL)
-	command := readNodetoolConfig(config, logger, nodeFunction)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_NODETOOL, c.FLAG_NODETOOL)
+    cqlshCommand := c.ReadConfigString("cqlsh command", config.CqlshCommand, "/usr/bin/cqlsh", logger)
+    nodetoolCommand := c.ReadConfigString("nodetool command", config.CqlshCommand, "/usr/bin/nodetool", logger)
 
 	return &NodetoolMetricGatherer{
-		logger:            logger,
-		debug:             config.Debug,
-		command:           command,
-		nodeFunction:      strings.ToLower(nodeFunction),
+		logger:          logger,
+		debug:           config.Debug,
+        cqlshCommand:    cqlshCommand,
+        nodetoolCommand: nodetoolCommand,
+		nodeFunction:    strings.ToLower(nodeFunction),
 	}
-}
-
-func readNodetoolConfig(config *c.Config, logger l.Logger, nodeFunction string) (string) {
-	command := "/usr/bin/nodetool"
-	label := c.DEFAULT_LABEL
-
-	if config.NodetoolCommand != c.EMPTY {
-		command = config.NodetoolCommand
-		label = c.CONFIG_LABEL
-	}
-
-	if config.Debug {
-		logger.Println("Node gatherer initialized by:", label, "as:", command, "function is:", nodeFunction)
-	}
-
-	return command
 }
 
 func (gatherer *NodetoolMetricGatherer) GetMetrics() ([]c.Metric, error) {
@@ -78,16 +65,16 @@ func (gatherer *NodetoolMetricGatherer) GetMetrics() ([]c.Metric, error) {
 	var err error = nil
 
 	switch gatherer.nodeFunction {
-	case nt.NtFunc_netstats:		    metrics, err = nt.Netstats(gatherer.command)
-	case nt.NtFunc_gcstats:			    metrics, err = nt.Gcstats(gatherer.command)
-	case nt.NtFunc_tpstats:			    metrics, err = nt.Tpstats(gatherer.command)
-	case nt.NtFunc_getlogginglevels:    metrics, err = nt.Getlogginglevels(gatherer.command)
-	case nt.NtFunc_gettimeout:	        metrics, err = nt.Gettimeout(gatherer.command)
-	case nt.NtFunc_cfstats:	            metrics, err = nt.Cfstats(gatherer.command)
-	case nt.NtFunc_proxyhistograms:     metrics, err = nt.ProxyHistograms(gatherer.command)
-	case nt.NtFunc_listsnapshots:       metrics, err = nt.ListSnapshots(gatherer.command)
-	case nt.NtFunc_statuses:            metrics, err = nt.Statuses(gatherer.command)
-	case nt.NtFunc_getstreamthroughput: metrics, err = nt.GetStreamThroughput(gatherer.command)
+	case nt.NtFunc_netstats:		    metrics, err = nt.Netstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_gcstats:			    metrics, err = nt.Gcstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_tpstats:			    metrics, err = nt.Tpstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_getlogginglevels:    metrics, err = nt.Getlogginglevels(gatherer.nodetoolCommand)
+	case nt.NtFunc_gettimeout:	        metrics, err = nt.Gettimeout(gatherer.nodetoolCommand)
+	case nt.NtFunc_cfstats:	            metrics, err = nt.Cfstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_proxyhistograms:     metrics, err = nt.ProxyHistograms(gatherer.nodetoolCommand)
+	case nt.NtFunc_listsnapshots:       metrics, err = nt.ListSnapshots(gatherer.nodetoolCommand)
+	case nt.NtFunc_statuses:            metrics, err = nt.Statuses(gatherer.nodetoolCommand)
+    case nt.NtFunc_getstreamthroughput: metrics, err = nt.GetStreamThroughput(gatherer.nodetoolCommand)
 	}
 
 	if err != nil {

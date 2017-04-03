@@ -2,7 +2,7 @@ package gatherer
 
 import (
 	"fmt"
-	l "github.com/advantageous/go-logback/logging"
+	l "github.com/cloudurable/simplelog/logging"
 	c "github.com/cloudurable/metricsd/common"
 	"strings"
 )
@@ -15,29 +15,14 @@ type FreeMetricGatherer struct {
 
 func NewFreeMetricGatherer(logger l.Logger, config *c.Config) *FreeMetricGatherer {
 
-	logger = c.EnsureLogger(logger, config.Debug, c.PROVIDER_FREE, c.FLAG_FREE)
-	command := readFreeConfig(config, logger)
+	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_FREE, c.FLAG_FREE)
+	command := c.ReadConfigString("free command", config.FreeCommand, "/usr/bin/free", logger)
 
 	return &FreeMetricGatherer{
 		logger: logger,
 		debug:  config.Debug,
 		command: command,
 	}
-}
-
-func readFreeConfig(config *c.Config, logger l.Logger) (string) {
-	command := "/usr/bin/free"
-	label := c.DEFAULT_LABEL
-
-	if config.FreeCommand != c.EMPTY {
-		command = config.FreeCommand
-		label = c.CONFIG_LABEL
-	}
-
-	if config.Debug {
-		logger.Println("Free gatherer initialized by:", label, "as:", command)
-	}
-	return command
 }
 
 func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
@@ -53,8 +38,6 @@ func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
 	var metrics = []c.Metric{}
 
 	lines := strings.Split(output, c.NEWLINE)
-	line1 := lines[1]
-	line2 := lines[2]
 
 	var total int64
 	var free int64
@@ -64,43 +47,39 @@ func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
 	var available int64
 	var name string
 
-	fmt.Sscanf(line1, "%s %d %d %d %d %d %d", &name, &total, &used, &free, &shared, &buffer, &available)
+	// Mem:
+	fmt.Sscanf(lines[1], "%s %d %d %d %d %d %d", &name, &total, &used, &free, &shared, &buffer, &available)
+	if gatherer.debug { gatherer.logger.Debugf("%s, total %d, used %d, free %d, shared %d, buffer %d, available %d", name, total, used, free, shared, buffer, available) }
 
-	if gatherer.debug {
-		gatherer.logger.Printf("name %s, total %d, used %d, free %d, shared %d, buffer %d, available %d",
-			                    name,     total,   used,    free,    shared,    buffer,    available)
-	}
-
-	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "mFreeLvl", c.PROVIDER_RAM))
-	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "mUsedLvl", c.PROVIDER_RAM))
-	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, shared, "mSharedLvl", c.PROVIDER_RAM))
-	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, buffer, "mBufLvl", c.PROVIDER_RAM))
-	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, available, "mAvailableLvl", c.PROVIDER_RAM))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "frMemFree", c.PROVIDER_FREE))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "frMemUsed", c.PROVIDER_FREE))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, shared, "frMemShared", c.PROVIDER_FREE))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, buffer, "frMemBuf", c.PROVIDER_FREE))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, available, "frMemAvailable", c.PROVIDER_FREE))
 
 	totalF := float64(total)
 
-	freePercent := c.Percent(float64(free), totalF)
-	metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, freePercent, "mFreePer", c.PROVIDER_RAM))
+	pct := c.PercentRoundDp(float64(free), totalF, 2)
+	metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, pct, "frMemFreePct", c.PROVIDER_FREE))
 
-	usedPercent := c.Percent(float64(used), totalF)
-	metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, usedPercent, "mUsedPer", c.PROVIDER_RAM))
+    pct = c.PercentRoundDp(float64(used), totalF, 2)
+	metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, pct, "frMemUsedPct", c.PROVIDER_FREE))
 
-	fmt.Sscanf(line2, "%s %d %d %d", &name, &total, &used, &free)
+    // Swap:
+	fmt.Sscanf(lines[2], "%s %d %d %d", &name, &total, &used, &free)
+    if gatherer.debug { gatherer.logger.Debugf("%s, total %d, used %d, free %d", name, total, used, free) }
 
-	if free == 0 && used == 0 && total == 0 {
-		// do nothing
-	} else {
-		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "mSwpFreeLvl", c.PROVIDER_RAM))
-		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "mSwpUsedLvl", c.PROVIDER_RAM))
-		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, shared, "mSwpSharedLvl", c.PROVIDER_RAM))
+	if total != 0 || free != 0 || used != 0 {
+		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "frSwapFreeLvl", c.PROVIDER_FREE))
+		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "frSwapUsedLvl", c.PROVIDER_FREE))
+		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, shared, "frSwapSharedLvl", c.PROVIDER_FREE))
 
 		totalF = float64(total)
-		freePercent = (float64(free) / totalF) * 100.0
-		metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, freePercent, "mSwpFreePer", c.PROVIDER_RAM))
-		usedPercent = (float64(used) / totalF) * 100.0
-		metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, usedPercent, "mSwpUsedPer", c.PROVIDER_RAM))
+        pct = c.PercentRoundDp(float64(free), totalF, 2)
+		metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, pct, "frSwapFreePct", c.PROVIDER_FREE))
+        pct = c.PercentRoundDp(float64(used), totalF, 2)
+		metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, pct, "frSwapUsedPct", c.PROVIDER_FREE))
 	}
 
 	return metrics, nil
-
 }

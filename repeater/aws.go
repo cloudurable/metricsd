@@ -1,7 +1,7 @@
 package repeater
 
 import (
-	lg "github.com/advantageous/go-logback/logging"
+	lg "github.com/cloudurable/simplelog/logging"
 	c "github.com/cloudurable/metricsd/common"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
@@ -16,8 +16,15 @@ type AwsCloudMetricRepeater struct {
 
 const debugFormat = "{\"provider\": \"%s\", \"name\": \"%s\", \"type\": %d, \"value\": %d, \"unit\": \"%s\"}"
 
-func (lr AwsCloudMetricRepeater) RepeatForContext() bool { return true; }
-func (lr AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true; }
+func (lr AwsCloudMetricRepeater) RepeatForContext() bool { return true }
+func (lr AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true }
+func (lr AwsCloudMetricRepeater) Verify() bool {
+    _, err := NewAWSSession(lr.config)
+    if err == nil {
+        return true
+    }
+	return false
+}
 
 func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics []c.Metric) error {
 
@@ -142,7 +149,11 @@ func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics
 }
 
 func NewAwsCloudMetricRepeater(config *c.Config) *AwsCloudMetricRepeater {
-	session := NewAWSSession(config)
-	logger := lg.NewSimpleLogger("aws-repeater")
+    logger := lg.NewSimpleLogger("aws-repeater")
+	session, err := NewAWSSession(config)
+    if err == nil {
+        logger.Critical(err)
+        return nil
+    }
 	return &AwsCloudMetricRepeater{logger, cloudwatch.New(session), config}
 }

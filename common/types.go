@@ -15,6 +15,7 @@ type MetricsRepeater interface {
 	ProcessMetrics(context MetricContext, metrics []Metric) error
 	RepeatForContext() bool
 	RepeatForNoIdContext() bool
+	Verify() bool
 }
 
 type Metric struct {
@@ -47,7 +48,7 @@ func NewMetricInt(mt MetricType, value int64, name string, provider string) *Met
 
 func NewMetricFloat(mt MetricType, value float64, name string, provider string) *Metric {
 	m := newMetric(mt, MVS_FLOAT, name, provider)
-	m.IntValue = int64(value)
+	m.IntValue = int64(RoundDp(value, 0))
 	m.FloatValue = value
 	m.StrValue = Float64ToString(value)
 

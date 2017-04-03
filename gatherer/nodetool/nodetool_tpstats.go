@@ -36,7 +36,7 @@ func Tpstats(nodetoolCommand string) ([]c.Metric, error) {
 	lines := strings.Split(output, c.NEWLINE)
 	state := 0
 	for _,line := range lines {
-		if (state == 0 || state == 2) {
+		if state == 0 || state == 2 {
 			state++ // skip the line
 		} else if state == 1 {
 			if line != c.EMPTY {

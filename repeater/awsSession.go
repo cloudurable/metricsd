@@ -1,7 +1,7 @@
 package repeater
 
 import (
-	l "github.com/advantageous/go-logback/logging"
+	l "github.com/cloudurable/simplelog/logging"
 	c "github.com/cloudurable/metricsd/common"
 	"github.com/aws/aws-sdk-go/aws"
 	awsCredentials "github.com/aws/aws-sdk-go/aws/credentials"
@@ -14,7 +14,7 @@ import (
 
 var awsLogger = l.NewSimpleLogger("aws")
 
-func NewAWSSession(cfg *c.Config) *awsSession.Session {
+func NewAWSSession(cfg *c.Config) (*awsSession.Session, error) {
 
 	metaDataClient, session := getClient(cfg)
 	credentials := getCredentials(metaDataClient)
@@ -29,11 +29,11 @@ func NewAWSSession(cfg *c.Config) *awsSession.Session {
 			Region:      aws.String(configAwsPart.AWSRegion),
 			MaxRetries:  aws.Int(3),
 		}
-		return awsSession.New(awsConfig)
+		return awsSession.NewSession(awsConfig)
 	} else {
 		configAwsPart := readMeta(metaDataClient, cfg, session)
 
-		return awsSession.New(&aws.Config{
+		return awsSession.NewSession(&aws.Config{
 			Region:     aws.String(configAwsPart.AWSRegion),
 			MaxRetries: aws.Int(3),
 		})

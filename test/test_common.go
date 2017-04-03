@@ -1,8 +1,8 @@
 package test
 
 import (
-	lg "github.com/advantageous/go-logback/logging"
-	l "github.com/advantageous/go-logback/logging/test"
+	lg "github.com/cloudurable/simplelog/logging"
+	l "github.com/cloudurable/simplelog/logging/test"
 	c "github.com/cloudurable/metricsd/common"
 	"os"
 	"flag"

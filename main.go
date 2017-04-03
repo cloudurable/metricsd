@@ -1,7 +1,7 @@
 package main
 
 import (
-	l "github.com/advantageous/go-logback/logging"
+	l "github.com/cloudurable/simplelog/logging"
 	c "github.com/cloudurable/metricsd/common"
 	r "github.com/cloudurable/metricsd/repeater"
 	g "github.com/cloudurable/metricsd/gatherer"
@@ -15,27 +15,40 @@ import (
 func main() {
 
 	version := flag.Bool("version", false, "Request Version")
-	configFile := flag.String("config", "/etc/metricsd.conf", "metrics config")
+	verifyAws := flag.Bool("verifyAws", false, "Verify AWS Credentials")
+	configFileName := flag.String("config", "/etc/metricsd.conf", "metrics config file name")
 
 	flag.Parse()
 
 	if *version {
-		println("0.4.0")
-		os.Exit(0)
+		println("0.4.5")
 	}
 
-	run(configFile)
+	if *verifyAws {
+        logger, config := prepare(configFileName, "verify")
+		r.VerifyRepeater(c.REPEATER_AWS, logger, config)
+	}
+
+    if !*version && !*verifyAws {
+        run(configFileName)
+    }
 }
 
-func run(configFile *string) {
+func prepare(configFileName *string, logName string) (l.Logger, *c.Config) {
+    logger := l.NewSimpleLogger(logName)
+    config, err := c.LoadConfig(*configFileName, logger)
+    if err != nil {
+        logger.CriticalError("Error reading config", err)
+        os.Exit(1)
+    }
+
+    return logger, config
+}
+
+func run(configFileName *string) {
 	// load the config file
 
-	logger := l.NewSimpleLogger("main-init")
-	config, err := c.LoadConfig(*configFile, logger)
-	if err != nil {
-		logger.CriticalError("Error reading config", err)
-		os.Exit(1)
-	}
+	logger, config := prepare(configFileName, "main-run")
 
 	logger = c.GetLogger(config.Debug, "main", "MT_MAIN_DEBUG")
 	logger.Debug("Init:", c.ObjectToString(config))
@@ -69,7 +82,7 @@ func run(configFile *string) {
 			timer.Reset(interval)
 
 		case <-configTimer.C:
-			if newConfig, err := c.LoadConfig(*configFile, logger); err != nil {
+			if newConfig, err := c.LoadConfig(*configFileName, logger); err != nil {
 				logger.Error("Error reading config, changes ignored!", err)
 			} else {
 				load = !c.ConfigEquals(config, newConfig)

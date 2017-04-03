@@ -1,7 +1,7 @@
 package common
 
 import (
-	l "github.com/advantageous/go-logback/logging"
+	l "github.com/cloudurable/simplelog/logging"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -182,8 +182,26 @@ func Round(f float64) int64 {
 	return  int64(t) + 1
 }
 
+func TruncDp(value float64, decimalPoints int) float64 {
+	var factor float64 = math.Pow10(decimalPoints)
+	return float64(int(value * factor)) / factor
+}
+
+func RoundDp(value float64, decimalPoints int) float64 {
+	var round float64 = math.Pow10(-decimalPoints) * .5
+	return TruncDp(value + round, decimalPoints)
+}
+
 func Percent(top float64, bot float64) float64 {
-	return top * 100 / bot
+    return top * 100 / bot
+}
+
+func PercentTruncDp(top float64, bot float64, decimalPoints int) float64 {
+    return TruncDp(Percent(top, bot), decimalPoints)
+}
+
+func PercentRoundDp(top float64, bot float64, decimalPoints int) float64 {
+    return RoundDp(Percent(top, bot), decimalPoints)
 }
 
 // ========================================================================================================================
@@ -220,12 +238,12 @@ func SplitGetLastField(text string) string {
 
 func StringArraysEqual(sa1 []string, sa2 []string) bool {
 	saLen := len(sa1)
-	if (saLen != len(sa2)) {
+	if saLen != len(sa2) {
 		return false
 	}
 
 	for i := 0; i < saLen; i++ {
-		if (sa1[i] != sa2[i]) {
+		if sa1[i] != sa2[i] {
 			return false
 		}
 	}
@@ -243,7 +261,7 @@ func UpFirst(s string) string {
 func ArrayToString(a []string) string {
 	result := OPEN_BRACE
 	for _, s := range a {
-		if (result == OPEN_BRACE) {
+		if result == OPEN_BRACE {
 			result = result + QUOTE + s + QUOTE
 		} else {
 			result = result + COMMA + SPACE + QUOTE + s + QUOTE
