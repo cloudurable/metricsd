@@ -2,7 +2,8 @@ package repeater
 
 import (
 	lg "github.com/cloudurable/simplelog/logging"
-	c "github.com/cloudurable/metricsd/common"
+    c "github.com/cloudurable/metricsd/common"
+    s "github.com/cloudurable/metricsd/service"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 )
@@ -18,7 +19,7 @@ const debugFormat = "{\"provider\": \"%s\", \"name\": \"%s\", \"type\": %d, \"va
 func (r AwsCloudMetricRepeater) RepeatForContext() bool { return true }
 func (r AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true }
 func (r AwsCloudMetricRepeater) Verify() bool {
-    _, err := NewAWSSession(r.config)
+    _, err := s.NewAWSSession(r.config)
     return err == nil
 }
 
@@ -145,7 +146,7 @@ func (cw AwsCloudMetricRepeater) createDimensions(context c.MetricContext, metri
 
 func NewAwsCloudMetricRepeater(config *c.Config) *AwsCloudMetricRepeater {
     logger := c.EnsureLogger(nil, config.Debug, "aws-repeater")
-	session, err := NewAWSSession(config) // this just verifies, no point in continuing if it won't connect
+	session, err := s.NewAWSSession(config) // this just verifies, no point in continuing if it won't connect
     if err != nil {
         logger.Critical(err)
         return nil

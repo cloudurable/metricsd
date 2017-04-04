@@ -1,4 +1,4 @@
-package repeater
+package service
 
 import (
 	l "github.com/cloudurable/simplelog/logging"
