@@ -5,6 +5,7 @@ import (
     "net/smtp"
     "crypto/tls"
     "strings"
+    c "github.com/cloudurable/metricsd/common"
     l "github.com/cloudurable/simplelog/logging"
 )
 
@@ -18,8 +19,8 @@ type Mailer struct {
     ignoreCert bool
 }
 
-func NewMailer(logger l.Logger, config *Config) *Mailer {
-    logger = EnsureLogger(logger, config.Debug, "Mailer")
+func NewMailer(logger l.Logger, config *c.Config) *Mailer {
+    logger = c.EnsureLogger(logger, config.Debug, "Mailer")
     return &Mailer{
         logger: logger,
         senderId: config.SmtpFromAddress,
@@ -51,7 +52,7 @@ func (mailer *Mailer) BuildMessage(toIds []string, subject string, body string) 
 func (mailer *Mailer) SendEmail(toIds []string, subject string, body string) {
     messageBody := mailer.BuildMessage(toIds, subject, body)
 
-    auth := smtp.PlainAuth(EMPTY, mailer.username, mailer.password, mailer.host)
+    auth := smtp.PlainAuth(c.EMPTY, mailer.username, mailer.password, mailer.host)
 
     tlsconfig := &tls.Config{
         InsecureSkipVerify: mailer.ignoreCert,
@@ -87,11 +88,11 @@ func (mailer *Mailer) SendEmail(toIds []string, subject string, body string) {
     }
 
     if err != nil {
-        mailer.logger.Warn(ObjectToString(err))
+        mailer.logger.Warn(c.ObjectToString(err))
     } else if client != nil {
         err = client.Quit()
         if err != nil {
-            mailer.logger.Warn(ObjectToString(err))
+            mailer.logger.Warn(c.ObjectToString(err))
         }
     }
 }

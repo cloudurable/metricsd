@@ -5,11 +5,13 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	r "github.com/cloudurable/metricsd/repeater"
 	g "github.com/cloudurable/metricsd/gatherer"
+    s "github.com/cloudurable/metricsd/service"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 	"flag"
+    "fmt"
 )
 
 func main() {
@@ -17,21 +19,14 @@ func main() {
 	version := flag.Bool("version", false, "Request Version")
 	verifyAws := flag.Bool("verifyAws", false, "Verify AWS Credentials")
 	configFileName := flag.String("config", "/etc/metricsd.conf", "metrics config file name")
+    emailTo := flag.String("e", c.EMPTY, "Test Email, 'To' Address")
 
 	flag.Parse()
 
-	if *version {
-		println("0.4.5")
-	}
-
-	if *verifyAws {
-        logger, config := prepare(configFileName, "verify")
-		r.VerifyRepeater(c.REPEATER_AWS, logger, config)
-	}
-
-    if !*version && !*verifyAws {
-        run(configFileName)
-    }
+	if *version            { println("0.4.5") } else
+    if *verifyAws          { doVerifyAws(configFileName) } else
+    if *emailTo != c.EMPTY { doEmailTo(configFileName, emailTo) } else
+                           { run(configFileName) }
 }
 
 func prepare(configFileName *string, logName string) (l.Logger, *c.Config) {
@@ -47,8 +42,10 @@ func prepare(configFileName *string, logName string) (l.Logger, *c.Config) {
 
 func run(configFileName *string) {
 	// load the config file
-
 	logger, config := prepare(configFileName, "main-run")
+
+    // services
+    // mailer := s.NewMailer(logger, config)
 
 	logger = c.GetLogger(config.Debug, "main")
 	logger.Debug("Init:", c.ObjectToString(config))
@@ -147,4 +144,19 @@ func collectMetrics(gatherers []c.MetricsGatherer, logger l.Logger) []c.Metric {
 	}
 
 	return metrics
+}
+
+func doVerifyAws(configFileName *string) {
+    logger, config := prepare(configFileName, "verify")
+    r.VerifyRepeater(c.REPEATER_AWS, logger, config)
+}
+
+func doEmailTo(configFileName *string, emailTo *string) {
+    logger, config := prepare(configFileName, "argsEmail")
+    mailer := s.NewMailer(logger, config)
+    t := time.Now()
+    subject := fmt.Sprintf("MetricsD command line test - subject %s", t.Format("2006-01-02T15:04:05.999-07:00"))
+    body := fmt.Sprintf("MetricsD command line test - body %s", t.Format("2006-01-02T15:04:05.999-07:00"))
+    mailer.SendEmail([]string{*emailTo}, subject, body)
+    logger.Info("Mail sent to " + *emailTo)
 }
