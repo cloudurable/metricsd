@@ -62,12 +62,40 @@ ec2_instance_id = "my-fake-instanceid"
 namespace="Cassandra Cluster"
 
 # ------------------------------------------------------------
+# smtp_host
+#     hostname of smtp server
+#
+# smtp_port
+#     port i.e 25, 465
+#
+# smtp_username
+#     account username, might be the same as smtp_from_address
+#
+# smtp_password
+#     account password
+#
+# smtp_from_address
+#     from email address / also reply address
+#
+# smtp_ignore_cert
+#     if your smtp server doesn't have a full cert, set this to true
+# ------------------------------------------------------------
+smtp_host = "yourmail.host.com"
+smtp_port = 465
+smtp_username = "account@host.com"
+smtp_password = "yourpass"
+smtp_from_address ="noreply@arondight.com"
+smtp_ignore_cert = false
+
+# ------------------------------------------------------------
 # disk_command string
 #     default: /usr/bin/df
 #     darwin example:  /bin/df
 #
 # disk_file_systems []string
-#     What FileSystems to include. defaults to /dev/*
+#     Only local file systems are checked.
+#     This setting filters which file systems to include in metrics
+#     default: ["/dev/*"]
 #
 # disk_fields []string
 #     what fields to output
@@ -77,7 +105,7 @@ namespace="Cassandra Cluster"
 #             usedpct      - percentage of bytes used on the disk (calculated)
 #             availablepct - percentage of bytes available on the disk (calculated)
 #             capacitypct  - percentage of bytes available on the disk (reported)
-#             mount        - where FileSystem is mounted
+#             mount        - where the file system is mounted
 #     default: ["availablepct"]
 # ------------------------------------------------------------
 #disk_command = "/usr/mybin/df"

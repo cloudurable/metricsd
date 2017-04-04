@@ -19,10 +19,7 @@ func (r AwsCloudMetricRepeater) RepeatForContext() bool { return true }
 func (r AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true }
 func (r AwsCloudMetricRepeater) Verify() bool {
     _, err := NewAWSSession(r.config)
-    if err == nil {
-        return true
-    }
-	return false
+    return err == nil
 }
 
 func (cw AwsCloudMetricRepeater) ProcessMetrics(context c.MetricContext, metrics []c.Metric) error {
@@ -149,7 +146,7 @@ func (cw AwsCloudMetricRepeater) createDimensions(context c.MetricContext, metri
 func NewAwsCloudMetricRepeater(config *c.Config) *AwsCloudMetricRepeater {
     logger := c.EnsureLogger(nil, config.Debug, "aws-repeater")
 	session, err := NewAWSSession(config) // this just verifies, no point in continuing if it won't connect
-    if err == nil {
+    if err != nil {
         logger.Critical(err)
         return nil
     }
