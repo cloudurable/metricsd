@@ -5,62 +5,63 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	r "github.com/cloudurable/metricsd/repeater"
 	g "github.com/cloudurable/metricsd/gatherer"
-    s "github.com/cloudurable/metricsd/service"
+    a "github.com/cloudurable/metricsd/alarmer"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 	"flag"
-    "fmt"
 )
 
 func main() {
 
 	version := flag.Bool("version", false, "Request Version")
-	verifyAws := flag.Bool("verifyAws", false, "Verify AWS Credentials")
+    vaws := flag.Bool("vaws", false, "Verify AWS Credentials")
+    vemail := flag.Bool("vemail", false, "Verify Email Alarmer")
 	configFileName := flag.String("config", "/etc/metricsd.conf", "metrics config file name")
-    emailTo := flag.String("e", c.EMPTY, "Test Email, 'To' Address")
 
 	flag.Parse()
 
-	if *version            { println("0.4.5") } else
-    if *verifyAws          { doVerifyAws(configFileName) } else
-    if *emailTo != c.EMPTY { doEmailTo(configFileName, emailTo) } else
-                           { run(configFileName) }
+	if *version { println("0.4.5") } else
+    if *vaws    { doVerifyAws(configFileName) } else
+    if *vemail  { doVerifyEmail(configFileName) } else
+                { run(configFileName) }
 }
 
-func prepare(configFileName *string, logName string) (l.Logger, *c.Config) {
-    logger := l.NewSimpleLogger(logName)
+func loadConfigForFirstTime(configFileName *string) *c.Config {
+    logger := l.NewSimpleLogger("metricsd")
     config, err := c.LoadConfig(*configFileName, logger)
     if err != nil {
         logger.CriticalError("Error reading config", err)
         os.Exit(1)
     }
-
-    return logger, config
+    return config
 }
 
 func run(configFileName *string) {
 	// load the config file
-	logger, config := prepare(configFileName, "main-run")
+	config := loadConfigForFirstTime(configFileName)
+    logger := c.GetLogger(config.Debug, "main")
+
+    logger.Debug("Init:", c.ObjectToString(config))
+    interval, intervalConfigRefresh := readRunConfig(config)
 
     // services
     // mailer := s.NewMailer(logger, config)
 
-	logger = c.GetLogger(config.Debug, "main")
-	logger.Debug("Init:", c.ObjectToString(config))
+	// terminator listener
+    terminator := makeTerminateChannel()
 
-	// begin the work
-	interval, intervalConfigRefresh, debug := readRunConfig(config)
+    // workers
+    gatherers := g.LoadGatherers(config)
+    repeaters := r.LoadRepeaters(config)
+    alarmers  := a.LoadAlarmers(config)
 
+    // timers
 	timer := time.NewTimer(interval)
-	configTimer := time.NewTimer(intervalConfigRefresh)
+    configTimer := time.NewTimer(intervalConfigRefresh)
 
-	terminator := makeTerminateChannel()
-
-	var gatherers []c.MetricsGatherer
-	var repeaters []c.MetricsRepeater
-	var configChanged bool = true
+	var configChanged bool = false
 
 	for {
 		select {
@@ -71,11 +72,17 @@ func run(configFileName *string) {
 		case <-timer.C:
 			if configChanged {
 				configChanged = false
+                logger = c.GetLogger(config.Debug, "main")
+                interval, intervalConfigRefresh = readRunConfig(config)
 				gatherers = g.LoadGatherers(config)
-				repeaters = r.LoadRepeaters(config)
+                repeaters = r.LoadRepeaters(config)
+                alarmers = a.LoadAlarmers(config)
+                timer = time.NewTimer(interval)
+                configTimer = time.NewTimer(intervalConfigRefresh)
 			}
+
 			metrics := collectMetrics(gatherers, logger)
-			processMetrics(metrics, repeaters, config, logger)
+			processMetrics(metrics, repeaters, alarmers, config, logger)
 			timer.Reset(interval)
 
 		case <-configTimer.C:
@@ -85,12 +92,10 @@ func run(configFileName *string) {
                 changed := !c.ConfigEquals(config, newConfig)
 				if changed {
 					config = newConfig
-					interval, intervalConfigRefresh, debug = readRunConfig(config)
-					if debug {
-						logger.Debug("Changed:", c.ObjectToString(config))
-					}
+					interval, intervalConfigRefresh = readRunConfig(config)
 					configChanged = true
-				} else if debug {
+                    logger.Debug("Changed:", c.ObjectToString(config))
+				} else {
                     logger.Debug("Same Config")
 				}
 			}
@@ -105,13 +110,11 @@ func makeTerminateChannel() <-chan os.Signal {
 	return ch
 }
 
-func readRunConfig(config *c.Config) (time.Duration, time.Duration, bool){
-	return config.TimePeriodSeconds * time.Second,
-		config.ReadConfigSeconds * time.Second,
-		config.Debug
+func readRunConfig(config *c.Config) (time.Duration, time.Duration){
+	return config.TimePeriodSeconds * time.Second, config.ReadConfigSeconds * time.Second
 }
 
-func processMetrics(metrics []c.Metric, repeaters []c.MetricsRepeater, context *c.Config, logger l.Logger) {
+func processMetrics(metrics []c.Metric, repeaters []c.MetricsRepeater, alarmers []c.MetricsAlarmer, context *c.Config, logger l.Logger) {
 	for _, r := range repeaters {
 		if r.RepeatForContext() {
 			if err := r.ProcessMetrics(context, metrics); err != nil {
@@ -129,34 +132,38 @@ func processMetrics(metrics []c.Metric, repeaters []c.MetricsRepeater, context *
 			}
 		}
 	}
+
+    for _, a := range alarmers {
+        if err := a.ProcessMetrics(context, metrics); err != nil {
+            logger.PrintError("Alarmer failed", err)
+        }
+    }
 }
 
 func collectMetrics(gatherers []c.MetricsGatherer, logger l.Logger) []c.Metric {
 
 	metrics := []c.Metric{}
 
-	for _, g := range gatherers {
-		m, err := g.GetMetrics()
+	for _, gatherer := range gatherers {
+		more, err := gatherer.GetMetrics()
 		if err != nil {
 			logger.PrintError("Problem getting metrics from gatherer", err)
-		}
-		metrics = append(metrics, m...)
+		} else if more != nil {
+            metrics = append(metrics, more...)
+        }
 	}
 
 	return metrics
 }
 
 func doVerifyAws(configFileName *string) {
-    logger, config := prepare(configFileName, "verify")
+    config := loadConfigForFirstTime(configFileName)
+    logger := c.GetLogger(config.Debug, "verifyAws")
     r.VerifyRepeater(c.REPEATER_AWS, logger, config)
 }
 
-func doEmailTo(configFileName *string, emailTo *string) {
-    logger, config := prepare(configFileName, "argsEmail")
-    mailer := s.NewMailer(logger, config)
-    t := time.Now()
-    subject := fmt.Sprintf("MetricsD command line test - subject %s", t.Format("2006-01-02T15:04:05.999-07:00"))
-    body := fmt.Sprintf("MetricsD command line test - body %s", t.Format("2006-01-02T15:04:05.999-07:00"))
-    mailer.SendEmail([]string{*emailTo}, subject, body)
-    logger.Info("Mail sent to " + *emailTo)
+func doVerifyEmail(configFileName *string) {
+    config := loadConfigForFirstTime(configFileName)
+    logger := c.GetLogger(config.Debug, "verifyEmail")
+    a.VerifyAlarmer(c.ALARMER_EMAIL, logger, config)
 }

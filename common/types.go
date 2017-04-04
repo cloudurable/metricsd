@@ -1,6 +1,9 @@
 package common
 
-import "time"
+import (
+    "time"
+    "fmt"
+)
 
 type MetricContext interface {
 	GetEnv() string
@@ -14,10 +17,15 @@ type MetricsGatherer interface {
 }
 
 type MetricsRepeater interface {
-	ProcessMetrics(context MetricContext, metrics []Metric) error
-	RepeatForContext() bool
-	RepeatForNoIdContext() bool
-	Verify() bool
+    ProcessMetrics(context MetricContext, metrics []Metric) error
+    RepeatForContext() bool
+    RepeatForNoIdContext() bool
+    Verify() bool
+}
+
+type MetricsAlarmer interface {
+    ProcessMetrics(context MetricContext, metrics []Metric) error
+    Verify() bool
 }
 
 type Metric struct {
@@ -28,7 +36,15 @@ type Metric struct {
 	StrValue   string
 	Name       string
 	Provider   string
+    Alarm      bool
     When       time.Time
+}
+
+func (m Metric) MetricFormattedString() string {
+    w := m.When.Format(STD_TIME_FORMAT)
+    a := "false"; if m.Alarm { a = "true" }
+    return fmt.Sprintf("Metric {\r\n    Type:%d,\r\n    Source:%d,\r\n    IntValue:%d,\r\n    FloatValue:%2.2f,\r\n    StrValue:\"%s\",\r\n    Name:\"%s\",\r\n    Provider:\"%s\",\r\n    Alarm: %s,\r\n    When:%s\r\n}",
+        m.Type, m.Source, m.IntValue, m.FloatValue, m.StrValue, m.Name, m.Provider, a, w)
 }
 
 func newMetric(mt MetricType, mvs MetricValueSource, name string, provider string) *Metric {

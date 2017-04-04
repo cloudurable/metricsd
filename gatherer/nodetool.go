@@ -9,7 +9,6 @@ import (
 
 type NodetoolMetricGatherer struct {
 	logger          l.Logger
-	debug           bool
     cqlshCommand    string
 	nodetoolCommand string
 	nodeFunction    string
@@ -51,7 +50,6 @@ func newNodetoolMetricGatherer(logger l.Logger, config *c.Config, nodeFunction s
 
 	return &NodetoolMetricGatherer{
 		logger:          logger,
-		debug:           config.Debug,
         cqlshCommand:    cqlshCommand,
         nodetoolCommand: nodetoolCommand,
 		nodeFunction:    strings.ToLower(nodeFunction),
@@ -60,25 +58,18 @@ func newNodetoolMetricGatherer(logger l.Logger, config *c.Config, nodeFunction s
 
 func (gatherer *NodetoolMetricGatherer) GetMetrics() ([]c.Metric, error) {
 
-	var metrics = []c.Metric{}
-	var err error = nil
-
 	switch gatherer.nodeFunction {
-	case nt.NtFunc_netstats:		    metrics, err = nt.Netstats(gatherer.nodetoolCommand)
-	case nt.NtFunc_gcstats:			    metrics, err = nt.Gcstats(gatherer.nodetoolCommand)
-	case nt.NtFunc_tpstats:			    metrics, err = nt.Tpstats(gatherer.nodetoolCommand)
-	case nt.NtFunc_getlogginglevels:    metrics, err = nt.Getlogginglevels(gatherer.nodetoolCommand)
-	case nt.NtFunc_gettimeout:	        metrics, err = nt.Gettimeout(gatherer.nodetoolCommand)
-	case nt.NtFunc_cfstats:	            metrics, err = nt.Cfstats(gatherer.nodetoolCommand)
-	case nt.NtFunc_proxyhistograms:     metrics, err = nt.ProxyHistograms(gatherer.nodetoolCommand)
-	case nt.NtFunc_listsnapshots:       metrics, err = nt.ListSnapshots(gatherer.nodetoolCommand)
-	case nt.NtFunc_statuses:            metrics, err = nt.Statuses(gatherer.nodetoolCommand)
-    case nt.NtFunc_getstreamthroughput: metrics, err = nt.GetStreamThroughput(gatherer.nodetoolCommand)
+	case nt.NtFunc_netstats:		    return nt.Netstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_gcstats:			    return nt.Gcstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_tpstats:			    return nt.Tpstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_getlogginglevels:    return nt.Getlogginglevels(gatherer.nodetoolCommand)
+	case nt.NtFunc_gettimeout:	        return nt.Gettimeout(gatherer.nodetoolCommand)
+	case nt.NtFunc_cfstats:	            return nt.Cfstats(gatherer.nodetoolCommand)
+	case nt.NtFunc_proxyhistograms:     return nt.ProxyHistograms(gatherer.nodetoolCommand)
+	case nt.NtFunc_listsnapshots:       return nt.ListSnapshots(gatherer.nodetoolCommand)
+	case nt.NtFunc_statuses:            return nt.Statuses(gatherer.nodetoolCommand)
+    case nt.NtFunc_getstreamthroughput: return nt.GetStreamThroughput(gatherer.nodetoolCommand)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return metrics, err
+	return nil, nil
 }

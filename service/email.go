@@ -49,7 +49,7 @@ func (mailer *Mailer) BuildMessage(toIds []string, subject string, body string) 
     return message
 }
 
-func (mailer *Mailer) SendEmail(toIds []string, subject string, body string) {
+func (mailer *Mailer) SendEmail(toIds []string, subject string, body string) bool {
     messageBody := mailer.BuildMessage(toIds, subject, body)
 
     auth := smtp.PlainAuth(c.EMPTY, mailer.username, mailer.password, mailer.host)
@@ -89,10 +89,14 @@ func (mailer *Mailer) SendEmail(toIds []string, subject string, body string) {
 
     if err != nil {
         mailer.logger.Warn(c.ObjectToString(err))
-    } else if client != nil {
+        return false
+    }
+
+    if client != nil {
         err = client.Quit()
         if err != nil {
             mailer.logger.Warn(c.ObjectToString(err))
         }
     }
+    return true
 }

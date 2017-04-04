@@ -9,8 +9,8 @@ func LoadRepeaters(config *c.Config) ([]c.MetricsRepeater) {
 
 	var repeaters = []c.MetricsRepeater{}
 
-	for _, repeater := range config.Repeaters {
-		switch repeater {
+	for _, repeaterName := range config.Repeaters {
+		switch repeaterName {
 		case c.REPEATER_AWS:
 			repeater := NewAwsCloudMetricRepeater(config)
 			if repeater != nil {
@@ -44,7 +44,6 @@ func VerifyRepeater(repeaterName string, logger l.Logger, config *c.Config) {
 }
 
 func verify(repeater c.MetricsRepeater, repeaterName string, logger l.Logger) {
-
     if repeater == nil {
         logger.Printf("%s repeater not constructed!", repeaterName)
     } else if !repeater.Verify() {

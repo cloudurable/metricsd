@@ -12,7 +12,6 @@ type CPUMetricsGatherer struct {
 	procStatPath string
 	lastStats    *CpuStats
 	logger       l.Logger
-	debug        bool
 	reportZeros  bool
 }
 
@@ -48,7 +47,6 @@ func NewCPUMetricsGatherer(logger l.Logger, config *c.Config) *CPUMetricsGathere
 	return &CPUMetricsGatherer{
 		procStatPath: procStatPath,
 		logger:       logger,
-		debug:        config.Debug,
 		reportZeros:  config.CpuReportZeros,
 	}
 }
@@ -59,10 +57,6 @@ func (cpu *CPUMetricsGatherer) TestingChangeProcStatPath(inProcStatPath string) 
 
 func (cpu *CPUMetricsGatherer) GetMetrics() ([]c.Metric, error) {
 
-	if cpu.debug {
-		cpu.logger.Debug("GetMetrics called")
-	}
-
 	var cpuStats *CpuStats
 	var err error
 
@@ -72,9 +66,6 @@ func (cpu *CPUMetricsGatherer) GetMetrics() ([]c.Metric, error) {
 
 	metrics := cpu.convertToMetrics(cpu.lastStats, cpuStats)
 	cpu.lastStats = cpuStats
-	if cpu.debug {
-		cpu.logger.Debug(c.ObjectToString(cpuStats))
-	}
 	return metrics, nil
 }
 
@@ -174,16 +165,12 @@ func (cpu *CPUMetricsGatherer) readProcStat() (*CpuStats, error) {
 					case  9: cpuTimes.Guest = value
 					case 10: cpuTimes.GuestNice = value
 					default:
-						if cpu.debug {
-							cpu.logger.Debug("Unknown cpu time column, index:", i, "found in", theLine)
-						}
+                        cpu.logger.Debug("Unknown cpu time column, index:", i, "found in", theLine)
 					}
 				}
 				stats.CpuMap[lineName] = cpuTimes
 			} else {
-				if cpu.debug {
-					cpu.logger.Debug("Unknown Data", theLine)
-				}
+                cpu.logger.Debug("Unknown Data", theLine)
 			}
 		}
 	}

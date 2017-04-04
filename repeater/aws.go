@@ -19,7 +19,7 @@ const debugFormat = "{\"provider\": \"%s\", \"name\": \"%s\", \"type\": %d, \"va
 func (r AwsCloudMetricRepeater) RepeatForContext() bool { return true }
 func (r AwsCloudMetricRepeater) RepeatForNoIdContext() bool { return true }
 func (r AwsCloudMetricRepeater) Verify() bool {
-    _, err := s.NewAWSSession(r.config)
+    _, err := s.NewAwsSession(r.config)
     return err == nil
 }
 
@@ -146,7 +146,7 @@ func (cw AwsCloudMetricRepeater) createDimensions(context c.MetricContext, metri
 
 func NewAwsCloudMetricRepeater(config *c.Config) *AwsCloudMetricRepeater {
     logger := c.EnsureLogger(nil, config.Debug, "aws-repeater")
-	session, err := s.NewAWSSession(config) // this just verifies, no point in continuing if it won't connect
+	session, err := s.NewAwsSession(config) // this just verifies, no point in continuing if it won't connect
     if err != nil {
         logger.Critical(err)
         return nil

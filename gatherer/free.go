@@ -9,7 +9,6 @@ import (
 
 type FreeMetricGatherer struct {
 	logger l.Logger
-	debug  bool
 	command string
 }
 
@@ -20,7 +19,6 @@ func NewFreeMetricGatherer(logger l.Logger, config *c.Config) *FreeMetricGathere
 
 	return &FreeMetricGatherer{
 		logger: logger,
-		debug:  config.Debug,
 		command: command,
 	}
 }
@@ -49,7 +47,7 @@ func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
 
 	// Mem:
 	fmt.Sscanf(lines[1], "%s %d %d %d %d %d %d", &name, &total, &used, &free, &shared, &buffer, &available)
-	if gatherer.debug { gatherer.logger.Debugf("%s, total %d, used %d, free %d, shared %d, buffer %d, available %d", name, total, used, free, shared, buffer, available) }
+	gatherer.logger.Debugf("%s, total %d, used %d, free %d, shared %d, buffer %d, available %d", name, total, used, free, shared, buffer, available)
 
 	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "frMemFree", c.PROVIDER_FREE))
 	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "frMemUsed", c.PROVIDER_FREE))
@@ -67,7 +65,7 @@ func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
 
     // Swap:
 	fmt.Sscanf(lines[2], "%s %d %d %d", &name, &total, &used, &free)
-    if gatherer.debug { gatherer.logger.Debugf("%s, total %d, used %d, free %d", name, total, used, free) }
+    gatherer.logger.Debugf("%s, total %d, used %d, free %d", name, total, used, free)
 
 	if total != 0 || free != 0 || used != 0 {
 		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "frSwapFreeLvl", c.PROVIDER_FREE))

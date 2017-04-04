@@ -8,8 +8,8 @@ func LoadGatherers(config *c.Config) ([]c.MetricsGatherer) {
 
 	var gatherers = []c.MetricsGatherer{}
 
-	for _,provider := range config.Gatherers {
-		switch provider {
+	for _, gathererName := range config.Gatherers {
+		switch gathererName {
 		case c.GATHERER_CPU:
 			cpu := NewCPUMetricsGatherer(nil, config)
 			if cpu != nil {

@@ -1,9 +1,11 @@
 package common
 
+var STD_TIME_FORMAT = "2006-01-02T15:04:05.999-07:00"
+
 const (
 	EMPTY                   = ""
 	SPACE                   = " "
-	NEWLINE                 = "\n"
+    NEWLINE                 = "\n"
 	UNDER                   = "_"
 	DOT                     = "."
 	QUOTE                   = "\""
@@ -37,9 +39,13 @@ const (
 )
 
 const (
-	REPEATER_AWS    = "aws"
-	REPEATER_LOGGER = "logger"
-	REPEATER_CONSOLE = "console"
+    REPEATER_AWS    = "aws"
+    REPEATER_LOGGER = "logger"
+    REPEATER_CONSOLE = "console"
+)
+
+const (
+    ALARMER_EMAIL    = "email"
 )
 
 type MetricValueSource int8
