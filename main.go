@@ -73,14 +73,10 @@ func run(configFileName *string) {
 			if configChanged {
 				configChanged = false
                 logger = c.GetLogger(config.Debug, "main")
-                interval, intervalConfigRefresh = readRunConfig(config)
 				gatherers = g.LoadGatherers(config)
                 repeaters = r.LoadRepeaters(config)
                 alarmers = a.LoadAlarmers(config)
-                timer = time.NewTimer(interval)
-                configTimer = time.NewTimer(intervalConfigRefresh)
 			}
-
 			metrics := collectMetrics(gatherers, logger)
 			processMetrics(metrics, repeaters, alarmers, config, logger)
 			timer.Reset(interval)
@@ -91,9 +87,9 @@ func run(configFileName *string) {
 			} else {
                 changed := !c.ConfigEquals(config, newConfig)
 				if changed {
+                    configChanged = true
 					config = newConfig
 					interval, intervalConfigRefresh = readRunConfig(config)
-					configChanged = true
                     logger.Debug("Changed:", c.ObjectToString(config))
 				} else {
                     logger.Debug("Same Config")

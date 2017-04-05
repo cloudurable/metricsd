@@ -5,6 +5,7 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	"strings"
 )
+var DiskFields_all = "all"
 
 const (
 	DiskField_total        = "total"
@@ -15,6 +16,16 @@ const (
 	DiskField_capacitypct  = "capacitypct"
 	DiskField_mount        = "mount"
 )
+
+var allFields = []string {
+    DiskField_total,
+    DiskField_used,
+    DiskField_available,
+    DiskField_usedpct,
+    DiskField_availablepct,
+    DiskField_capacitypct,
+    DiskField_mount,
+}
 
 type DiskMetricsGatherer struct {
 	logger       l.Logger
@@ -33,8 +44,11 @@ func NewDiskMetricsGatherer(logger l.Logger, config *c.Config) *DiskMetricsGathe
 
 	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_DISK)
 	command := 	c.ReadConfigString("df command", config.DiskCommand, "/usr/bin/df", logger)
-	fields := c.ReadConfigStringArray("disk fields", config.DiskFields, []string{DiskField_availablepct}, logger)
-	dfses := c.ReadConfigStringArray("disk file systems", config.DiskFileSystems, []string{"/dev/*"}, logger)
+	fields := c.ReadConfigStringArray("disk fields", config.DiskFields, []string{DiskField_availablepct}, logger, true)
+    if fields[0] == DiskFields_all {
+        fields = allFields
+    }
+	dfses := c.ReadConfigStringArray("disk file systems", config.DiskFileSystems, []string{"/dev/*"}, logger, false)
 
 	var diskIncludes = []diskInclude{}
 	for _, dfs := range dfses {
@@ -45,12 +59,14 @@ func NewDiskMetricsGatherer(logger l.Logger, config *c.Config) *DiskMetricsGathe
 		}
 	}
 
+    diskAlarmThreshold := float64(config.DiskAlarmThreshold)
+    if diskAlarmThreshold <= 0 { diskAlarmThreshold = 101 }
 	return &DiskMetricsGatherer{
 		logger:       logger,
 		command:      command,
 		diskIncludes: diskIncludes,
 		fields:       fields,
-        diskAlarmThreshold: float64(config.DiskAlarmThreshold),
+        diskAlarmThreshold: diskAlarmThreshold,
 	}
 }
 

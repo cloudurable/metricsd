@@ -5,6 +5,7 @@ import (
     "github.com/hashicorp/hcl"
     "io/ioutil"
     "time"
+    "strings"
 )
 
 type Config struct {
@@ -105,10 +106,15 @@ func ReadConfigString(label string, configured string, dflt string, logger l.Log
     return configured
 }
 
-func ReadConfigStringArray(label string, configured []string, dflt []string, logger l.Logger) []string {
+func ReadConfigStringArray(label string, configured []string, dflt []string, logger l.Logger, lowerIt bool) []string {
 
     if configured != nil && len(configured) > 0 {
         logger.Debugf("%s initialized using config value of '%s'", label, ArrayToString(configured))
+        if lowerIt {
+            for x := 0; x < len(configured); x++ {
+                configured[x] = strings.ToLower(configured[x])
+            }
+        }
         return configured
     }
 

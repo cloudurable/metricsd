@@ -107,10 +107,16 @@ smtp_ignore_cert = false
 #             capacitypct  - percentage of bytes available on the disk (reported)
 #             mount        - where the file system is mounted
 #     default: ["availablepct"]
+#
+# disk_alarm_threshold int
+#     if percent used is more than this number, send an alarm
+#     value <= 0 or > 100 mean never alarm
+#     default: 101
 # ------------------------------------------------------------
 #disk_command = "/usr/mybin/df"
 #disk_file_systems = ["/dev/*", "udev"]
 #disk_fields = ["total", "used", "available", "usedpct", "availablepct", "mount"]
+#disk_alarm_threshold = 75
 
 # ------------------------------------------------------------
 # cpu_proc_stat string
@@ -224,7 +230,13 @@ The best doc is a working example.
 
 
 ### Disk metrics
-* `dUVol<VOLUME_NAME>AvailPer` - percentage of disk space left (per volume)
+* `diskTotal:<fs>` - total K Bytes
+* `diskUsed:<fs>` - used K Bytes
+* `diskAvailable:<fs>` - available K Bytes
+* `diskUsedPct:<fs>` - percent of disk used
+* `diskAvailPct:<fs>` - percent of disk available
+* `diskCapacityPct:<fs>` - percent of disk used
+* `diskAvailMount:<fs>` - Mounted on volume
 
 
 ### Mem metrics

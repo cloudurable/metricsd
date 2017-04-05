@@ -30,10 +30,10 @@ func VerifyAlarmer(alarmerName string, logger l.Logger, config *c.Config) {
 
 func verify(alarmer c.MetricsAlarmer, alarmerName string, logger l.Logger) {
     if alarmer == nil {
-        logger.Printf("%s al not constructed!", alarmerName)
+        logger.Printf("%s alarmer not constructed!", alarmerName)
     } else if !alarmer.Verify() {
-        logger.Printf("%s al not verified!", alarmerName)
+        logger.Printf("%s alarmer not verified!", alarmerName)
     } else {
-        logger.Printf("%s al verified!", alarmerName)
+        logger.Printf("%s alarmer verified!", alarmerName)
     }
 }

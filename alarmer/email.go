@@ -47,7 +47,7 @@ func (al EmailMetricAlarmer) ProcessMetrics(context c.MetricContext, metrics []c
                 if shouldSend {
                     subject := fmt.Sprintf("MetricsD alarm.  Instance'%s'  Provider'%s'  Name'%s'", al.awsConfig.EC2InstanceId, m.Provider, m.Name)
                     m.When.Format(c.STD_TIME_FORMAT)
-                    body := "MetricsD alarm\r\n" + m.MetricFormattedString()
+                    body := "MetricsD alarm\r\n" + m.MetricStringFormatted()
                     al.logger.Debug("Sending alarm email:", subject)
                     if al.send(subject, body) {
                         newMap[hash] = time.Now()
@@ -83,7 +83,7 @@ func hash(m c.Metric) string {
 func NewEmailMetricAlarmer(config *c.Config) *EmailMetricAlarmer {
     logger := c.EnsureLogger(nil, config.Debug, "email")
 
-    alarmTo := 	c.ReadConfigStringArray("email alarm to", config.EmailAlarmTo, []string{}, logger)
+    alarmTo := 	c.ReadConfigStringArray("email alarm to", config.EmailAlarmTo, []string{}, logger, true)
     if len(alarmTo) == 0 {
         logger.Error("No email alarm To addresses are configured")
         os.Exit(11)

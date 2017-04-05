@@ -3,6 +3,7 @@ package common
 import (
     "time"
     "fmt"
+    "strings"
 )
 
 type MetricContext interface {
@@ -40,10 +41,17 @@ type Metric struct {
     When       time.Time
 }
 
-func (m Metric) MetricFormattedString() string {
+func (m Metric) MetricString() string {
+    s := m.MetricStringFormatted()
+    s = strings.Replace(s, ",\r\n    ", ", ", -1)
+    s = strings.Replace(s, "\r\n    ", "", -1)
+    return strings.Replace(s, "\r\n", "", -1)
+}
+
+func (m Metric) MetricStringFormatted() string {
     w := m.When.Format(STD_TIME_FORMAT)
     a := "false"; if m.Alarm { a = "true" }
-    return fmt.Sprintf("Metric {\r\n    Type:%d,\r\n    Source:%d,\r\n    IntValue:%d,\r\n    FloatValue:%2.2f,\r\n    StrValue:\"%s\",\r\n    Name:\"%s\",\r\n    Provider:\"%s\",\r\n    Alarm: %s,\r\n    When:%s\r\n}",
+    return fmt.Sprintf("Metric {\r\n    Name: \"%s\",\r\n    Type: %d,\r\n    Source: %d,\r\n    IntValue: %d,\r\n    FloatValue: %2.2f,\r\n    StrValue: \"%s\",\r\n    Provider: \"%s\",\r\n    Alarm: %s,\r\n    When: %s\r\n}",
         m.Type, m.Source, m.IntValue, m.FloatValue, m.StrValue, m.Name, m.Provider, a, w)
 }
 
