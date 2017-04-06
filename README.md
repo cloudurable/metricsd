@@ -1,159 +1,31 @@
 ## Metricsd
 
-Reads OS metrics and sends data to AWS CloudWatch Metrics.
- 
-Metricsd gathers OS metrics for AWS CloudWatch. You can install it as a systemd process. 
+Metricsd is a golang program that gathers metrics from a node and
+sends these metrics to various places such as AWS CloudWatch
 
-Configuration
-####  /etc/metricsd.conf 
-```conf
-# ------------------------------------------------------------
-# env bool
-#     Used to specify the environment: prod, dev, qa, staging, etc.
-#     This gets used as a dimension that is sent to repeaters
-#
-# debug bool
-#     true sets logging level to debug
-#
-# local bool
-#     Used to ignore local ec2 meta-data, used for development only.
-# ------------------------------------------------------------
-env="dev"
-#debug = true
-#local = true
+Metricsd gathers these metrics
+* Disk Space
+* Cpu Utilization
+* Memory Utilization
+* Cassandra metrics from these nodetool functions:
+  * cfstats
+  * compactionstats
+  * gcstats
+  * netstats
+  * tpstats
+  * getlogginglevels
+  * proxyhistograms
 
-# ------------------------------------------------------------
-# interval_seconds int
-#     Defaults to 30 seconds
-# ------------------------------------------------------------
-#interval_seconds = 15
+then repeats (sends) them to
+* AWS CloudWatch
 
-# ------------------------------------------------------------
-# server_role
-#     Used to specify the role of the AMI instance.
-#     examples: dcos-master consul-master dcos-agent cassandra-node
-# ------------------------------------------------------------
-server_role = "dcos-master"
+It also create alarms in AWS CloudWatch when then uses AWS SNS to notify you.
+(ARN's are previously required to be setup)
 
-# ------------------------------------------------------------
-# repeaters []string
-#     aws, logger
-#
-# gatherers []string
-#     disk cpu free nodetool
-# ------------------------------------------------------------
-repeaters = ["aws"]
-gatherers = ["disk", "cpu", "free", "nodetool"]
+It can send an email of an alarm directly.
 
-# ------------------------------------------------------------
-# aws_Region string
-#     If not set, uses aws current region for this instance.
-#     Used for testing only???
-#
-# ec2_instance_id string
-#     If not set, uses aws instance id for this instance
-#     Used for testing only???
-#
-# namespace string
-#     Used to specify the top level namespace in cloudwatch.
-# ------------------------------------------------------------
-aws_region = "us-west-1"
-ec2_instance_id = "my-fake-instanceid"
-namespace="Cassandra Cluster"
-
-# ------------------------------------------------------------
-# smtp_host
-#     hostname of smtp server
-#
-# smtp_port
-#     port i.e 25, 465
-#
-# smtp_username
-#     account username, might be the same as smtp_from_address
-#
-# smtp_password
-#     account password
-#
-# smtp_from_address
-#     from email address / also reply address
-#
-# smtp_ignore_cert
-#     if your smtp server doesn't have a full cert, set this to true
-# ------------------------------------------------------------
-smtp_host = "yourmail.host.com"
-smtp_port = 465
-smtp_username = "account@host.com"
-smtp_password = "yourpass"
-smtp_from_address ="noreply@arondight.com"
-smtp_ignore_cert = false
-
-# ------------------------------------------------------------
-# disk_command string
-#     default: /usr/bin/df
-#     darwin example:  /bin/df
-#
-# disk_file_systems []string
-#     Only local file systems are checked.
-#     This setting filters which file systems to include in metrics
-#     default: ["/dev/*"]
-#
-# disk_fields []string
-#     what fields to output
-#     fields: total        - number of 1K bytes on the disk
-#             used         - number of 1K bytes used on the disk
-#             available    - number of 1K bytes available on the disk
-#             usedpct      - percentage of bytes used on the disk (calculated)
-#             availablepct - percentage of bytes available on the disk (calculated)
-#             capacitypct  - percentage of bytes available on the disk (reported)
-#             mount        - where the file system is mounted
-#     default: ["availablepct"]
-#
-# disk_alarm_threshold int
-#     if percent used is more than this number, send an alarm
-#     value <= 0 or > 100 mean never alarm
-#     default: 101
-# ------------------------------------------------------------
-#disk_command = "/usr/mybin/df"
-#disk_file_systems = ["/dev/*", "udev"]
-#disk_fields = ["total", "used", "available", "usedpct", "availablepct", "mount"]
-#disk_alarm_threshold = 75
-
-# ------------------------------------------------------------
-# cpu_proc_stat string
-#     Used to specify /proc/stat or absolute file
-#     default:        /proc/stat
-#     darwin example: /home/batman/gospace/src/github.com/cloudurable/metricsd/test/test-data/proc/stat
-#
-# cpu_report_zeros bool
-#     default: false
-# ------------------------------------------------------------
-#cpu_proc_stat = "/proc/stat"
-#cpu_report_zeros = true
-
-# ------------------------------------------------------------
-# free_command string
-#     default:        /usr/bin/free
-#     darwin example: /usr/local/bin/free
-# ------------------------------------------------------------
-#free_command = "/usr/mybin/free"
-
-# ------------------------------------------------------------
-# cqlsh_command string
-#   default:        /usr/bin/cqlsh
-#
-# nodetool_command string
-#   default:        /usr/bin/nodetool
-#   darwin example: /usr/local/bin/nodetool
-#
-# nodetool_functions []string    : required when nodetool will run
-#    specify nodetool_functions as array
-#      functions: cfstats compactionstats gcstats netstats tpstats getlogginglevels proxyhistograms listsnapshots, statuses
-# ------------------------------------------------------------
-#cqlsh_command = "/usr/bin/cqlsh"
-#nodetool_command = "/usr/bin/nodetool"
-#nodetool_functions = ["tpstats", "gcstats"]
-```
-
+####  /etc/metricsd.conf
+Metricsd is very configurable and has many configuration options. Please see the [Wiki](https://github.com/cloudurable/metricsd/wiki)
 
 ## Installing as a service
 
