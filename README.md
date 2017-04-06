@@ -24,8 +24,12 @@ It also create alarms in AWS CloudWatch when then uses AWS SNS to notify you.
 
 It can send an email of an alarm directly.
 
-####  /etc/metricsd.conf
-Metricsd is very configurable and has many configuration options. Please see the [Wiki](https://github.com/cloudurable/metricsd/wiki)
+## Configuration
+
+By default, the program will look for the file `/etc/metricsd.conf` for configuration information.
+You can also specify the file on the command line with the `-config` option, like `metricsd -config /not_etc/metricds.config`
+
+There are many configuration options. Please see the [Wiki](https://github.com/cloudurable/metricsd/wiki) for details.
 
 ## Installing as a service
 
