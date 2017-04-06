@@ -1,6 +1,6 @@
 package common
 
-var STD_TIME_FORMAT = "2006-01-02T15:04:05.999-07:00"
+const STD_TIME_FORMAT = "2006-01-02T15:04:05.999-07:00"
 
 const (
 	EMPTY                   = ""
@@ -25,26 +25,28 @@ const (
 )
 
 const (
-	GATHERER_CPU      = "cpu"
-	GATHERER_DISK     = "disk"
-	GATHERER_FREE     = "free"
-	GATHERER_NODETOOL = "nodetool"
+    PROVIDER_DISK      = "disk"
+    PROVIDER_CPU       = "cpu"
+    PROVIDER_FREE      = "free"
+    PROVIDER_CASSANDRA = "cass"
 )
 
 const (
-	PROVIDER_DISK     = "disk"
-	PROVIDER_CPU      = "cpu"
-	PROVIDER_NODETOOL = "nodetool"
-	PROVIDER_FREE     = "free"
+	GATHERER_DISK      = PROVIDER_DISK
+    GATHERER_CPU       = PROVIDER_CPU
+	GATHERER_FREE      = PROVIDER_FREE
+	GATHERER_CASSANDRA = PROVIDER_CASSANDRA
 )
 
 const (
+    REPEATER        = "repeater-"
     REPEATER_AWS    = "aws"
-    REPEATER_LOGGER = "logger"
-    REPEATER_CONSOLE = "console"
+    REPEATER_LOG    = "log"
 )
 
 const (
+    ALARMER          = "alarmer-"
+    ALARMER_AWS      = REPEATER_AWS
     ALARMER_EMAIL    = "email"
 )
 
@@ -66,7 +68,8 @@ func (mvs *MetricValueSource) Name() string {
 
 type MetricType int8
 const (
-	MT_COUNT MetricType = iota
+    MT_NONE MetricType = iota
+    MT_COUNT
 	MT_PERCENT
 	MT_MICROS
 	MT_MILLIS
@@ -75,11 +78,10 @@ const (
 	MT_SIZE_MB
 	MT_SIZE_GB
 	MT_SIZE_TB
-	MT_NONE
 )
 
-func (mt *MetricType) Name() string {
-	switch *mt {
+func (mt MetricType) Name() string { // EXACT MATCHES FOR CLOUDWATCH CONSTANTS
+	switch mt {
 	case MT_COUNT:     return "Count"
 	case MT_PERCENT:   return "Percent"
 	case MT_MICROS:    return "Microseconds"
@@ -87,42 +89,49 @@ func (mt *MetricType) Name() string {
 	case MT_SIZE_BYTE: return "Byte"
 	case MT_SIZE_MB:   return "Megabytes"
 	case MT_SIZE_KB:   return "Kilobytes"
-	case MT_NONE:   return "None"
 	}
-	return EMPTY
+	return "None"
 }
 
-/* Cloudwatch for reference
+type MetricAlarmComparisonType int8
 const (
-	StandardUnitSeconds = "Seconds"
-	StandardUnitMicroseconds = "Microseconds"
-	StandardUnitMilliseconds = "Milliseconds"
-	StandardUnitBytes = "Bytes"
-	StandardUnitKilobytes = "Kilobytes"
-	StandardUnitMegabytes = "Megabytes"
-	StandardUnitGigabytes = "Gigabytes"
-	StandardUnitTerabytes = "Terabytes"
-	StandardUnitBits = "Bits"
-	StandardUnitKilobits = "Kilobits"
-	StandardUnitMegabits = "Megabits"
-	StandardUnitGigabits = "Gigabits"
-	StandardUnitTerabits = "Terabits"
-	StandardUnitPercent = "Percent"
-	StandardUnitCount = "Count"
-	StandardUnitBytesSecond = "Bytes/Second"
-	StandardUnitKilobytesSecond = "Kilobytes/Second"
-	StandardUnitMegabytesSecond = "Megabytes/Second"
-	StandardUnitGigabytesSecond = "Gigabytes/Second"
-	StandardUnitTerabytesSecond = "Terabytes/Second"
-	StandardUnitBitsSecond = "Bits/Second"
-	StandardUnitKilobitsSecond = "Kilobits/Second"
-	StandardUnitMegabitsSecond = "Megabits/Second"
-	StandardUnitGigabitsSecond = "Gigabits/Second"
-	StandardUnitTerabitsSecond = "Terabits/Second"
-	StandardUnitCountSecond = "Count/Second"
-	StandardUnitNone = "None"
+    MACT_NONE MetricAlarmComparisonType = iota
+    MACT_GTE
+    MACT_GT
+    MACT_LT
+    MACT_LTE
 )
-*/
+
+func (mact MetricAlarmComparisonType) Name() string { // EXACT MATCHES FOR CLOUDWATCH CONSTANTS
+    switch mact {
+    case MACT_GTE: return "GreaterThanThreshold"
+    case MACT_GT:  return "GreaterThanThreshold"
+    case MACT_LT:  return "LessThanThreshold"
+    case MACT_LTE: return "LessThanOrEqualToThreshold"
+    }
+    return "None"
+}
+
+type MetricAlarmStatType int8
+const (
+    MAST_NONE MetricAlarmStatType = iota
+    MAST_SAMPLE
+    MAST_AVG
+    MAST_SUM
+    MAST_MIN
+    MAST_MAX
+)
+
+func (mast MetricAlarmStatType) Name() string {  // EXACT MATCHES FOR CLOUDWATCH CONSTANTS
+    switch mast {
+    case MAST_SAMPLE: return "SampleCount"
+    case MAST_AVG:    return "Average"
+    case MAST_SUM:    return "Sum"
+    case MAST_MIN:    return "Minimum"
+    case MAST_MAX:    return "Maximum"
+    }
+    return "None"
+}
 
 const (
 	VALUE_N_A   int64 = -125

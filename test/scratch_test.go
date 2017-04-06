@@ -11,14 +11,16 @@ func TestScratch(test *testing.T) {
 	logger := GetTestLogger(test, "scratch")
 	config := GetTestConfig(logger)
 
-	fmt.Println(c.ObjectToString(config))
+	fmt.Println(c.ToJsonLabeledString(config))
 
 	config = &c.Config{
 		Debug: false,
-		DiskCommand: "df",
-		DiskFileSystems: []string{"/dev/*", "udev"},
-		DiskFields: []string{"total", "used", "available", "usedpct", "availablepct", "capacitypct", "mount"},
+        DiskConfig: c.DiskGathererConfig{
+            Command: "df",
+            FileSystems: []string{"/dev/*", "udev"},
+            Fields: []string{"total", "used", "available", "usedpct", "availablepct", "capacitypct", "mount"},
+        },
 	}
 
-	fmt.Println(c.ObjectToString(config))
+	fmt.Println(c.ToJsonLabeledString(config))
 }

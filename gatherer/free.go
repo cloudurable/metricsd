@@ -15,7 +15,7 @@ type FreeMetricGatherer struct {
 func NewFreeMetricGatherer(logger l.Logger, config *c.Config) *FreeMetricGatherer {
 
 	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_FREE)
-	command := c.ReadConfigString("free command", config.FreeCommand, "/usr/bin/free", logger)
+	command := c.ReadConfigString("free command", config.FreeConfig.Command, "/usr/bin/free", logger)
 
 	return &FreeMetricGatherer{
 		logger: logger,
@@ -23,8 +23,12 @@ func NewFreeMetricGatherer(logger l.Logger, config *c.Config) *FreeMetricGathere
 	}
 }
 
-func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
-	output, err := c.ExecCommand(gatherer.command)
+func (this *FreeMetricGatherer) Name() string {
+    return c.GATHERER_FREE
+}
+
+func (this *FreeMetricGatherer) Gather() ([]c.Metric, error) {
+	output, err := c.ExecCommand(this.command)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +51,7 @@ func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
 
 	// Mem:
 	fmt.Sscanf(lines[1], "%s %d %d %d %d %d %d", &name, &total, &used, &free, &shared, &buffer, &available)
-	gatherer.logger.Debugf("%s, total %d, used %d, free %d, shared %d, buffer %d, available %d", name, total, used, free, shared, buffer, available)
+	this.logger.Debugf("%s, total %d, used %d, free %d, shared %d, buffer %d, available %d", name, total, used, free, shared, buffer, available)
 
 	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "frMemFree", c.PROVIDER_FREE))
 	metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "frMemUsed", c.PROVIDER_FREE))
@@ -65,7 +69,7 @@ func (gatherer *FreeMetricGatherer) GetMetrics() ([]c.Metric, error) {
 
     // Swap:
 	fmt.Sscanf(lines[2], "%s %d %d %d", &name, &total, &used, &free)
-    gatherer.logger.Debugf("%s, total %d, used %d, free %d", name, total, used, free)
+    this.logger.Debugf("%s, total %d, used %d, free %d", name, total, used, free)
 
 	if total != 0 || free != 0 || used != 0 {
 		metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, free, "frSwapFreeLvl", c.PROVIDER_FREE))

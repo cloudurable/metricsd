@@ -6,27 +6,35 @@ import (
     "strings"
 )
 
-type MetricContext interface {
-	GetEnv() string
-	GetNameSpace() string
-	GetRole() string
-	SendId() bool
-}
-
 type MetricsGatherer interface {
-	GetMetrics() ([]Metric, error)
+	Gather() ([]Metric, error)
+    Name() string
 }
 
 type MetricsRepeater interface {
-    ProcessMetrics(context MetricContext, metrics []Metric) error
-    RepeatForContext() bool
-    RepeatForNoIdContext() bool
+    Repeat(metrics []Metric) error
     Verify() bool
+    Name() string
 }
 
 type MetricsAlarmer interface {
-    ProcessMetrics(context MetricContext, metrics []Metric) error
+    Alarm(metrics []Metric) error
     Verify() bool
+    Name() string
+}
+
+type MetricAlarm struct {
+    Description       string
+    Threshold         float64
+    PeriodSeconds     int64
+    EvaluationPeriods int64
+    Comparison        MetricAlarmComparisonType
+    Statistic         MetricAlarmStatType
+}
+
+func (this MetricAlarm) Empty() bool {
+    return this.Description == EMPTY && this.Threshold == 0 && this.PeriodSeconds == 0 && this.EvaluationPeriods == 0 &&
+        this.Comparison == MACT_NONE && this.Statistic == MAST_NONE
 }
 
 type Metric struct {
@@ -37,22 +45,21 @@ type Metric struct {
 	StrValue   string
 	Name       string
 	Provider   string
-    Alarm      bool
     When       time.Time
+    Alarm      MetricAlarm
 }
 
-func (m Metric) MetricString() string {
-    s := m.MetricStringFormatted()
+func (this Metric) MetricString() string {
+    s := this.MetricStringFormatted()
     s = strings.Replace(s, ",\r\n    ", ", ", -1)
     s = strings.Replace(s, "\r\n    ", "", -1)
     return strings.Replace(s, "\r\n", "", -1)
 }
 
-func (m Metric) MetricStringFormatted() string {
-    w := m.When.Format(STD_TIME_FORMAT)
-    a := "false"; if m.Alarm { a = "true" }
-    return fmt.Sprintf("Metric {\r\n    Name: \"%s\",\r\n    Type: %d,\r\n    Source: %d,\r\n    IntValue: %d,\r\n    FloatValue: %2.2f,\r\n    StrValue: \"%s\",\r\n    Provider: \"%s\",\r\n    Alarm: %s,\r\n    When: %s\r\n}",
-        m.Type, m.Source, m.IntValue, m.FloatValue, m.StrValue, m.Name, m.Provider, a, w)
+func (this Metric) MetricStringFormatted() string {
+    w := this.When.Format(STD_TIME_FORMAT)
+    return fmt.Sprintf("Metric {\r\n    Name: \"%s\",\r\n    Type: %d,\r\n    Source: %d,\r\n    IntValue: %d,\r\n    FloatValue: %2.2f,\r\n    StrValue: \"%s\",\r\n    Provider: \"%s\",\r\n   When: %s,\r\n    Alarm: %s\r\n}",
+        this.Type, this.Source, this.IntValue, this.FloatValue, this.StrValue, this.Name, this.Provider, w, this.Alarm.Description)
 }
 
 func newMetric(mt MetricType, mvs MetricValueSource, name string, provider string) *Metric {

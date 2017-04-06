@@ -37,7 +37,7 @@ func Getlogginglevels(nodetoolCommand string) ([]c.Metric, error) {
 			case "info":	code = value_level_info
 			case "warn":	code = value_level_warn
 			}
-			metrics = append(metrics, *c.NewMetricStringCode(c.MT_NONE, logLevelString, code, name, c.PROVIDER_NODETOOL))
+			metrics = append(metrics, *c.NewMetricStringCode(c.MT_NONE, logLevelString, code, name, c.PROVIDER_CASSANDRA))
 		}
 	}
 

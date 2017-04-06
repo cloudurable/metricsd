@@ -19,13 +19,13 @@ func Gcstats(nodetoolCommand string) ([]c.Metric, error) {
 	values := strings.Fields(lines[1])
 
 	var metrics = []c.Metric{}
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[0], "ntGcInterval", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[1], "ntGcMaxElapsed", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[2], "ntGcTotalElapsed", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[3], "ntGcStdevElapsed", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_SIZE_MB, values[4], "ntGcReclaimed", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, values[5], "ntGcCollections", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_SIZE_BYTE, values[6], "ntGcDirectMemoryBytes", c.PROVIDER_NODETOOL))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[0], "ntGcInterval", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[1], "ntGcMaxElapsed", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[2], "ntGcTotalElapsed", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, values[3], "ntGcStdevElapsed", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_SIZE_MB, values[4], "ntGcReclaimed", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, values[5], "ntGcCollections", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_SIZE_BYTE, values[6], "ntGcDirectMemoryBytes", c.PROVIDER_CASSANDRA))
 
 	return metrics, nil
 }

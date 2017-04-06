@@ -28,7 +28,7 @@ func GetTestConfig(logger lg.Logger) (*c.Config) {
 }
 
 func StandardTest(test *testing.T, gatherer c.MetricsGatherer) {
-	metrics, err := gatherer.GetMetrics()
+	metrics, err := gatherer.Gather()
 	if err == nil {
 		AssertMetrics(test, metrics)
 		ShowTestMetrics(metrics)
@@ -50,7 +50,7 @@ func AssertMetrics(test *testing.T, metrics []c.Metric) {
 func ShowTestMetrics(metrics []c.Metric) {
 	if metrics != nil && len(metrics) > 0 {
 		for _,m := range metrics {
-			fmt.Println(c.ObjectToString(&m))
+			fmt.Println(c.ToJsonLabeledString(&m))
 		}
 	}
 }

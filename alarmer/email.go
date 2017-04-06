@@ -12,49 +12,53 @@ import (
 )
 
 type EmailMetricAlarmer struct {
-	logger               lg.Logger
-    config               *c.Config
-    awsConfig            *s.AwsConfig
-    alarmMap             map[string]time.Time
-    to                   []string
-    alarmIntervalSeconds int64
+	logger                lg.Logger
+    config                *c.Config
+    awsContext            *c.AwsContext
+    alarmMap              map[string]time.Time
+    to                    []string
+    resendIntervalSeconds int64
 }
 
-func (al EmailMetricAlarmer) Verify() bool {
+func (this *EmailMetricAlarmer) Verify() bool {
     t := time.Now()
     subject := fmt.Sprintf("MetricsD verify %s", t.Format(c.STD_TIME_FORMAT))
-    body := fmt.Sprintf("This is a MetricsD verification email, sent from '%s' at %s", al.awsConfig.EC2InstanceId, t.Format(c.STD_TIME_FORMAT))
-    return al.send(subject, body)
+    body := fmt.Sprintf("This is a MetricsD verification email, sent from '%s' at %s", this.awsContext.EC2InstanceId, t.Format(c.STD_TIME_FORMAT))
+    return this.send(subject, body)
 }
 
-func (al EmailMetricAlarmer) ProcessMetrics(context c.MetricContext, metrics []c.Metric) error {
+func (this *EmailMetricAlarmer) Alarm(metrics []c.Metric) error {
     if len(metrics) > 0 {
-        newMap := map[string]time.Time{}
+        newSendTimes := map[string]time.Time{}
         for _, m := range metrics {
-            if m.Alarm {
+            if !m.Alarm.Empty() {
                 hash := hash(m)
-                lastTime, present := al.alarmMap[hash]
-                shouldSend := !present
-                if present {
-                    elapsed := time.Now().Unix() - lastTime.Unix()
-                    if elapsed > al.alarmIntervalSeconds {
-                        shouldSend = true
-                    } else {
-                        newMap[hash] = lastTime
+                lastSendTime, sentThisBefore := this.alarmMap[hash]
+                newSendTime := lastSendTime
+                shouldSend := !sentThisBefore
+                if sentThisBefore {
+                    if this.resendIntervalSeconds > 0 { // if it's < 0, never re-send
+                        elapsed := time.Now().Unix() - lastSendTime.Unix()
+                        if elapsed > this.resendIntervalSeconds {
+                            shouldSend = true
+                            newSendTime = time.Now()
+                        }
                     }
+                } else {
+                    newSendTime = time.Now()
                 }
+                newSendTimes[hash] = newSendTime
 
                 if shouldSend {
-                    subject := fmt.Sprintf("MetricsD alarm.  Instance'%s'  Provider'%s'  Name'%s'", al.awsConfig.EC2InstanceId, m.Provider, m.Name)
+                    subject := fmt.Sprintf("MetricsD alarm.  Instance'%s'  Provider'%s'  Name'%s'", this.awsContext.EC2InstanceId, m.Provider, m.Name)
                     m.When.Format(c.STD_TIME_FORMAT)
                     body := "MetricsD alarm\r\n" + m.MetricStringFormatted()
-                    al.logger.Debug("Sending alarm email:", subject)
-                    if al.send(subject, body) {
-                        newMap[hash] = time.Now()
-                        al.alarmMap[hash] = newMap[hash]
+                    this.logger.Debug("Sending alarm email:", subject)
+                    if this.send(subject, body) {
+                        this.alarmMap[hash] = newSendTimes[hash]
                     } else {
                         // didn't send make sure it will if it alarms again
-                        delete(al.alarmMap, hash)
+                        delete(this.alarmMap, hash)
                     }
                 }
             }
@@ -62,13 +66,13 @@ func (al EmailMetricAlarmer) ProcessMetrics(context c.MetricContext, metrics []c
 
         // NOT SURE WHY I HAVE TO DO THIS, I THINK IT HAS TO DO WITH POINTERS. AND YES, I JUST TRIED ASSIGNING
         deleteThese := []string{}
-        for key, _ := range al.alarmMap {
-            if _, present := newMap[key]; !present {
+        for key, _ := range this.alarmMap {
+            if _, present := newSendTimes[key]; !present {
                 deleteThese = append(deleteThese, key)
             }
         }
         for _,key := range deleteThese {
-            delete(al.alarmMap, key)
+            delete(this.alarmMap, key)
         }
     }
     return nil
@@ -79,29 +83,30 @@ func hash(m c.Metric) string {
     hasher.Write([]byte(fmt.Sprintf("%d %d %s %s", m.Type, m.Source, m.Name, m.Provider)))
     return hex.EncodeToString(hasher.Sum(nil));
 }
+func (this *EmailMetricAlarmer) Name() string { return this.logger.Name() }
 
 func NewEmailMetricAlarmer(config *c.Config) *EmailMetricAlarmer {
-    logger := c.EnsureLogger(nil, config.Debug, "email")
+    logger := c.EnsureLogger(nil, config.Debug, c.ALARMER + c.ALARMER_AWS)
 
-    alarmTo := 	c.ReadConfigStringArray("email alarm to", config.EmailAlarmTo, []string{}, logger, true)
+    alarmTo := 	c.ReadConfigStringArray("email alarm to", []string{"FIX ME !!! config.EmailAlarmTo"}, []string{}, logger, true)
     if len(alarmTo) == 0 {
         logger.Error("No email alarm To addresses are configured")
-        os.Exit(11)
+        os.Exit(501)
     }
 
-    alarmIntervalSeconds := config.EmailAlarmIntervalSeconds
-    if alarmIntervalSeconds < 30 {
-        alarmIntervalSeconds = 30
-    } else if alarmIntervalSeconds > 3600 {
-        alarmIntervalSeconds = 3600
+    resendIntervalSeconds := config.EmailAlarmerConfig.ResendIntervalSeconds
+    if resendIntervalSeconds == 0 {
+        resendIntervalSeconds = 300
+    } else if resendIntervalSeconds > 3600 {
+        resendIntervalSeconds = 3600
     }
 
-    awsConfig := s.GetAwsConfig(config)
+    awsContext := c.GetAwsContext(logger, config)
 
-    return &EmailMetricAlarmer{logger, config, awsConfig, map[string]time.Time{}, alarmTo, int64(alarmIntervalSeconds)}
+    return &EmailMetricAlarmer{logger, config, awsContext, map[string]time.Time{}, alarmTo, int64(resendIntervalSeconds)}
 }
 
-func (al EmailMetricAlarmer) send(subject string, body string) bool {
-    mailer := s.NewMailer(al.logger, al.config)
-    return mailer.SendEmail(al.to, subject, body)
+func (this *EmailMetricAlarmer) send(subject string, body string) bool {
+    mailer := s.NewSmtp(this.logger, this.config)
+    return mailer.SendEmail(this.to, subject, body)
 }

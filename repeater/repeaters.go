@@ -5,9 +5,15 @@ import (
     l "github.com/cloudurable/simplelog/logging"
 )
 
-func LoadRepeaters(config *c.Config) ([]c.MetricsRepeater) {
+type Repeaters struct {
+    logger l.Logger
+    repeaters []c.MetricsRepeater
+}
 
-	var repeaters = []c.MetricsRepeater{}
+func NewRepeaters(config *c.Config) *Repeaters {
+
+    logger := c.GetLogger(config.Debug, "repeaters")
+	repeaters := []c.MetricsRepeater{}
 
 	for _, repeaterName := range config.Repeaters {
 		switch repeaterName {
@@ -17,38 +23,38 @@ func LoadRepeaters(config *c.Config) ([]c.MetricsRepeater) {
 				repeaters = append(repeaters, repeater)
 			}
 
-		case c.REPEATER_LOGGER:
+		case c.REPEATER_LOG:
 			repeater := NewLogMetricsRepeater()
-			if repeater != nil {
-				repeaters = append(repeaters, repeater)
-			}
-
-		case c.REPEATER_CONSOLE:
-			repeater := NewConsoleMetricsRepeater()
 			if repeater != nil {
 				repeaters = append(repeaters, repeater)
 			}
 		}
 	}
 
-	return repeaters
+	return &Repeaters{logger, repeaters}
 }
 
-func VerifyRepeater(repeaterName string, logger l.Logger, config *c.Config) {
-
-    switch repeaterName {
-    case c.REPEATER_AWS:     verify(NewAwsCloudMetricRepeater(config), repeaterName, logger)
-    case c.REPEATER_LOGGER:  verify(NewLogMetricsRepeater(), repeaterName, logger)
-    case c.REPEATER_CONSOLE: verify(NewConsoleMetricsRepeater(), repeaterName, logger)
+func (this *Repeaters) Repeat(metrics []c.Metric) {
+    for _, r := range this.repeaters {
+        if err := r.Repeat(metrics); err != nil {
+            this.logger.PrintError("Repeater failed", err)
+        }
     }
 }
 
-func verify(repeater c.MetricsRepeater, repeaterName string, logger l.Logger) {
+func VerifyRepeater(repeaterName string, logger l.Logger, config *c.Config) {
+    switch repeaterName {
+    case c.REPEATER_AWS:     verify(NewAwsCloudMetricRepeater(config), logger)
+    case c.REPEATER_LOG:     verify(NewLogMetricsRepeater(), logger)
+    }
+}
+
+func verify(repeater c.MetricsRepeater, logger l.Logger) {
     if repeater == nil {
-        logger.Printf("%s repeater not constructed!", repeaterName)
+        logger.Printf("%s repeater not constructed!", repeater.Name())
     } else if !repeater.Verify() {
-        logger.Printf("%s repeater not verified!", repeaterName)
+        logger.Printf("%s repeater not verified!", repeater.Name())
     } else {
-        logger.Printf("%s repeater verified!", repeaterName)
+        logger.Printf("%s repeater verified!", repeater.Name())
     }
 }

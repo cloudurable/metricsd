@@ -5,7 +5,8 @@ import (
 	c "github.com/cloudurable/metricsd/common"
 	"strings"
 )
-var DiskFields_all = "all"
+
+const DiskFields_all = "all"
 
 const (
 	DiskField_total        = "total"
@@ -40,15 +41,19 @@ type diskInclude struct {
 	value string
 }
 
+func (this *DiskMetricsGatherer) Name() string {
+    return c.GATHERER_DISK
+}
+
 func NewDiskMetricsGatherer(logger l.Logger, config *c.Config) *DiskMetricsGatherer {
 
 	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_DISK)
-	command := 	c.ReadConfigString("df command", config.DiskCommand, "/usr/bin/df", logger)
-	fields := c.ReadConfigStringArray("disk fields", config.DiskFields, []string{DiskField_availablepct}, logger, true)
+	command := 	c.ReadConfigString("df command", config.DiskConfig.Command, "/usr/bin/df", logger)
+	fields := c.ReadConfigStringArray("disk fields", config.DiskConfig.Fields, []string{DiskField_usedpct}, logger, true)
     if fields[0] == DiskFields_all {
         fields = allFields
     }
-	dfses := c.ReadConfigStringArray("disk file systems", config.DiskFileSystems, []string{"/dev/*"}, logger, false)
+	dfses := c.ReadConfigStringArray("disk file systems", config.DiskConfig.FileSystems, []string{"/dev/*"}, logger, false)
 
 	var diskIncludes = []diskInclude{}
 	for _, dfs := range dfses {
@@ -59,7 +64,7 @@ func NewDiskMetricsGatherer(logger l.Logger, config *c.Config) *DiskMetricsGathe
 		}
 	}
 
-    diskAlarmThreshold := float64(config.DiskAlarmThreshold)
+    diskAlarmThreshold := float64(config.DiskConfig.AlarmThreshold)
     if diskAlarmThreshold <= 0 { diskAlarmThreshold = 101 }
 	return &DiskMetricsGatherer{
 		logger:       logger,
@@ -70,9 +75,9 @@ func NewDiskMetricsGatherer(logger l.Logger, config *c.Config) *DiskMetricsGathe
 	}
 }
 
-func (disk *DiskMetricsGatherer) GetMetrics() ([]c.Metric, error) {
+func (this *DiskMetricsGatherer) Gather() ([]c.Metric, error) {
 
-	output, err := c.ExecCommand(disk.command, "-P", "-k", "-l") // P for posix compatibility output, k for 1K blocks, l for local only
+	output, err := c.ExecCommand(this.command, "-P", "-k", "-l") // P for posix compatibility output, k for 1K blocks, l for local only
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +87,8 @@ func (disk *DiskMetricsGatherer) GetMetrics() ([]c.Metric, error) {
 	for _, line := range strings.Split(output, c.NEWLINE) {
 		if first {
 			first = false
-		} else if disk.shouldReportDisk(line) {
-			metrics = disk.appendDf(metrics, line)
+		} else if this.shouldReportDisk(line) {
+			metrics = this.appendDf(metrics, line)
 		}
 	}
 
@@ -91,9 +96,9 @@ func (disk *DiskMetricsGatherer) GetMetrics() ([]c.Metric, error) {
 
 }
 
-func (disk *DiskMetricsGatherer) shouldReportDisk(line string) bool {
+func (this *DiskMetricsGatherer) shouldReportDisk(line string) bool {
 	fsname := c.SplitGetFieldByIndex(line, 0)
-	for _,include := range disk.diskIncludes {
+	for _,include := range this.diskIncludes {
 		if include.starts {
 			if strings.HasPrefix(fsname, include.value) {
 				return true
@@ -107,7 +112,7 @@ func (disk *DiskMetricsGatherer) shouldReportDisk(line string) bool {
 	return false
 }
 
-func (disk *DiskMetricsGatherer) appendDf(metrics []c.Metric, line string) []c.Metric {
+func (this *DiskMetricsGatherer) appendDf(metrics []c.Metric, line string) []c.Metric {
 
 	// Filesystem     1024-blocks    Used Available Capacity Mounted on
 	// udev               4019524       0   4019524       0% /dev
@@ -128,17 +133,25 @@ func (disk *DiskMetricsGatherer) appendDf(metrics []c.Metric, line string) []c.M
 	var upct = c.PercentRoundDp(float64(used), totalF, 2)
 	var apct = c.PercentRoundDp(float64(available), totalF, 2)
 
-	disk.logger.Debugf("name %s, total %d, used %d, available %d, usedpct %2.2f, availablepct %2.2f, capacity %d, mount %s\n",
+	this.logger.Debugf("name %s, total %d, used %d, available %d, usedpct %2.2f, availablepct %2.2f, capacity %d, mount %s\n",
 		                name,    total,    used,    available,    upct,          apct,               capacity,    mount)
 
-    alarm := upct >= disk.diskAlarmThreshold
+    alarm := upct >= this.diskAlarmThreshold
     if alarm {
         m := *c.NewMetricFloat(c.MT_PERCENT, upct, "diskUsedPct:" + name, c.PROVIDER_DISK)
-        m.Alarm = true
+        m.Alarm = c.MetricAlarm{
+            Description: "Disk Used Pct Alarm",
+            Threshold: float64(this.diskAlarmThreshold),
+            PeriodSeconds: 300,
+            EvaluationPeriods: 1,
+            Comparison: c.MACT_GTE,
+            Statistic: c.MAST_AVG,
+        }
+
         metrics = append(metrics, m)
     }
 
-	for _,field := range disk.fields {
+	for _,field := range this.fields {
 		switch field {
 		case DiskField_total:
 			metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, total, "diskTotal:" + name, c.PROVIDER_DISK))

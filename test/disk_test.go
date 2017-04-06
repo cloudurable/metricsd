@@ -10,9 +10,11 @@ func TestDisk(test *testing.T) {
 
 	config := c.Config{
 		Debug: true,
-		DiskCommand: "df",
-		DiskFileSystems: []string{"/dev/*", "udev", "C:*"},
-		DiskFields: []string{"total", "used", "available", "usedpct", "availablepct", "capacitypct", "mount"},
+        DiskConfig: c.DiskGathererConfig{
+            Command: "df",
+            FileSystems: []string{"/dev/*", "udev", "C:*"},
+            Fields: []string{"total", "used", "available", "usedpct", "availablepct", "capacitypct", "mount"},
+        },
 	}
 
 	StandardTest(test, g.NewDiskMetricsGatherer(nil, &config))

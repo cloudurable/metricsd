@@ -57,11 +57,11 @@ func Tpstats(nodetoolCommand string) ([]c.Metric, error) {
 func appendTpPool(metrics []c.Metric, line string) []c.Metric {
 	valuesOnly := strings.Fields(line)
 	prefix := "ntTpPool" + valuesOnly[0]
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[1], prefix + "Active", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[2], prefix + "Pending", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[3], prefix + "Completed", c.PROVIDER_NODETOOL))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[4], prefix + "Blocked", c.PROVIDER_NODETOOL))
-	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[5], prefix + "AllTimeBlocked", c.PROVIDER_NODETOOL))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[1], prefix + "Active", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[2], prefix + "Pending", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[3], prefix + "Completed", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[4], prefix + "Blocked", c.PROVIDER_CASSANDRA))
+	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[5], prefix + "AllTimeBlocked", c.PROVIDER_CASSANDRA))
 }
 
 func appendTpMessageType(metrics []c.Metric, line string) []c.Metric {
@@ -73,5 +73,5 @@ func appendTpMessageType(metrics []c.Metric, line string) []c.Metric {
 			name = name + c.UpFirst(part)
 		}
 	}
-	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[1], name, c.PROVIDER_NODETOOL))
+	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[1], name, c.PROVIDER_CASSANDRA))
 }

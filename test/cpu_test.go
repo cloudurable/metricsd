@@ -13,8 +13,10 @@ func TestCpuCounts(test *testing.T) {
 
 	config := c.Config{
 		Debug: true,
-		CpuReportZeros: true,
-		CpuProcStat: dir + "/test-data/proc/stat1",
+        CpuConfig: c.CpuGathererConfig{
+            ReportZeros: true,
+            ProcStat: dir + "/test-data/proc/stat1",
+        },
 	}
 
 	cpu := g.NewCPUMetricsGatherer(nil, &config)

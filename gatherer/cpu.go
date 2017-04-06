@@ -42,65 +42,69 @@ type CpuStats struct {
 func NewCPUMetricsGatherer(logger l.Logger, config *c.Config) *CPUMetricsGatherer {
 
 	logger = c.EnsureLogger(logger, config.Debug, c.GATHERER_CPU)
-	procStatPath := c.ReadConfigString("proc/stat path", config.CpuProcStat, "/proc/stat", logger)
+	procStatPath := c.ReadConfigString("proc/stat path", config.CpuConfig.ProcStat, "/proc/stat", logger)
 
 	return &CPUMetricsGatherer{
 		procStatPath: procStatPath,
 		logger:       logger,
-		reportZeros:  config.CpuReportZeros,
+		reportZeros:  config.CpuConfig.ReportZeros,
 	}
 }
 
-func (cpu *CPUMetricsGatherer) TestingChangeProcStatPath(inProcStatPath string) {
-	cpu.procStatPath = inProcStatPath
+func (this *CPUMetricsGatherer) TestingChangeProcStatPath(inProcStatPath string) {
+	this.procStatPath = inProcStatPath
 }
 
-func (cpu *CPUMetricsGatherer) GetMetrics() ([]c.Metric, error) {
+func (this *CPUMetricsGatherer) Name() string {
+    return c.GATHERER_CPU
+}
+
+func (this *CPUMetricsGatherer) Gather() ([]c.Metric, error) {
 
 	var cpuStats *CpuStats
 	var err error
 
-	if cpuStats, err = cpu.readProcStat(); err != nil {
+	if cpuStats, err = this.readProcStat(); err != nil {
 		return nil, err
 	}
 
-	metrics := cpu.convertToMetrics(cpu.lastStats, cpuStats)
-	cpu.lastStats = cpuStats
+	metrics := this.convertToMetrics(this.lastStats, cpuStats)
+	this.lastStats = cpuStats
 	return metrics, nil
 }
 
-func (cpu *CPUMetricsGatherer) appendCount(metrics []c.Metric, name string, count int64) []c.Metric {
-	if cpu.reportZeros || count > 0 {
+func (this *CPUMetricsGatherer) appendCount(metrics []c.Metric, name string, count int64) []c.Metric {
+	if this.reportZeros || count > 0 {
 		metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, count, name, c.PROVIDER_CPU))
 	}
 	return metrics
 }
 
-func (cpu *CPUMetricsGatherer) convertToMetrics(lastTimeStats *CpuStats, nowStats *CpuStats) []c.Metric {
+func (this *CPUMetricsGatherer) convertToMetrics(lastTimeStats *CpuStats, nowStats *CpuStats) []c.Metric {
 	var metrics = []c.Metric{}
 
 	if lastTimeStats != nil {
 
-		metrics = cpu.appendCount(metrics, "cpuSoftIrqCnt", int64(nowStats.SoftInterruptCount - lastTimeStats.SoftInterruptCount))
-		metrics = cpu.appendCount(metrics, "cpuIntrCnt", int64(nowStats.InterruptCount - lastTimeStats.InterruptCount))
-		metrics = cpu.appendCount(metrics, "cpuCtxtCnt", int64(nowStats.ContextSwitchCount - lastTimeStats.ContextSwitchCount))
-		metrics = cpu.appendCount(metrics, "cpuProcessesStrtCnt", int64(nowStats.ProcessCount - lastTimeStats.ProcessCount))
+		metrics = this.appendCount(metrics, "cpuSoftIrqCnt", int64(nowStats.SoftInterruptCount - lastTimeStats.SoftInterruptCount))
+		metrics = this.appendCount(metrics, "cpuIntrCnt", int64(nowStats.InterruptCount - lastTimeStats.InterruptCount))
+		metrics = this.appendCount(metrics, "cpuCtxtCnt", int64(nowStats.ContextSwitchCount - lastTimeStats.ContextSwitchCount))
+		metrics = this.appendCount(metrics, "cpuProcessesStrtCnt", int64(nowStats.ProcessCount - lastTimeStats.ProcessCount))
 
 		for cpuName, nowCpuTimes := range nowStats.CpuMap {
 			lastCpuTimes, found := lastTimeStats.CpuMap[cpuName]
 			if !found {
 				lastCpuTimes = CpuTimes{}
 			}
-			metrics = cpu.appendCount(metrics, "cpuGuestJif", int64(nowCpuTimes.Guest - lastCpuTimes.Guest))
-			metrics = cpu.appendCount(metrics, "cpuUsrJif", int64(nowCpuTimes.User - lastCpuTimes.User))
-			metrics = cpu.appendCount(metrics, "cpuIdleJif", int64(nowCpuTimes.Idle - lastCpuTimes.Idle))
-			metrics = cpu.appendCount(metrics, "cpuIowaitJif", int64(nowCpuTimes.IoWait - lastCpuTimes.IoWait))
-			metrics = cpu.appendCount(metrics, "cpuIrqJif", int64(nowCpuTimes.Irq - lastCpuTimes.Irq))
-			metrics = cpu.appendCount(metrics, "cpuGuestniceJif", int64(nowCpuTimes.GuestNice - lastCpuTimes.GuestNice))
-			metrics = cpu.appendCount(metrics, "cpuStealJif", int64(nowCpuTimes.Steal - lastCpuTimes.Steal))
-			metrics = cpu.appendCount(metrics, "cpuNiceJif", int64(nowCpuTimes.Nice - lastCpuTimes.Nice))
-			metrics = cpu.appendCount(metrics, "cpuSysJif", int64(nowCpuTimes.System - lastCpuTimes.System))
-			metrics = cpu.appendCount(metrics, "cpuSoftIrqJif", int64(nowCpuTimes.SoftIrq - lastCpuTimes.SoftIrq))
+			metrics = this.appendCount(metrics, "cpuGuestJif", int64(nowCpuTimes.Guest - lastCpuTimes.Guest))
+			metrics = this.appendCount(metrics, "cpuUsrJif", int64(nowCpuTimes.User - lastCpuTimes.User))
+			metrics = this.appendCount(metrics, "cpuIdleJif", int64(nowCpuTimes.Idle - lastCpuTimes.Idle))
+			metrics = this.appendCount(metrics, "cpuIowaitJif", int64(nowCpuTimes.IoWait - lastCpuTimes.IoWait))
+			metrics = this.appendCount(metrics, "cpuIrqJif", int64(nowCpuTimes.Irq - lastCpuTimes.Irq))
+			metrics = this.appendCount(metrics, "cpuGuestniceJif", int64(nowCpuTimes.GuestNice - lastCpuTimes.GuestNice))
+			metrics = this.appendCount(metrics, "cpuStealJif", int64(nowCpuTimes.Steal - lastCpuTimes.Steal))
+			metrics = this.appendCount(metrics, "cpuNiceJif", int64(nowCpuTimes.Nice - lastCpuTimes.Nice))
+			metrics = this.appendCount(metrics, "cpuSysJif", int64(nowCpuTimes.System - lastCpuTimes.System))
+			metrics = this.appendCount(metrics, "cpuSoftIrqJif", int64(nowCpuTimes.SoftIrq - lastCpuTimes.SoftIrq))
 		}
 	}
 
@@ -110,11 +114,11 @@ func (cpu *CPUMetricsGatherer) convertToMetrics(lastTimeStats *CpuStats, nowStat
 	return metrics
 }
 
-func (cpu *CPUMetricsGatherer) readProcStat() (*CpuStats, error) {
-	org, err := os.Open(cpu.procStatPath)
+func (this *CPUMetricsGatherer) readProcStat() (*CpuStats, error) {
+	org, err := os.Open(this.procStatPath)
 	fd := bufio.NewReader(org)
 	if err != nil {
-		cpu.logger.Emergencyf("Error reading file %v", err)
+		this.logger.Emergencyf("Error reading file %v", err)
 	}
 
 	stats := CpuStats{}
@@ -125,7 +129,7 @@ func (cpu *CPUMetricsGatherer) readProcStat() (*CpuStats, error) {
 		bytes, _, err := fd.ReadLine()
 		if err != nil {
 			if err.Error() != "EOF" { // EOF error is ok, other errors are not ok
-				cpu.logger.PrintError("Error reading line from /proc/stat", err)
+				this.logger.PrintError("Error reading line from /proc/stat", err)
 				return nil, err
 			}
 			break // EOF, leave the for loop
@@ -165,12 +169,12 @@ func (cpu *CPUMetricsGatherer) readProcStat() (*CpuStats, error) {
 					case  9: cpuTimes.Guest = value
 					case 10: cpuTimes.GuestNice = value
 					default:
-                        cpu.logger.Debug("Unknown cpu time column, index:", i, "found in", theLine)
+                        this.logger.Debug("Unknown cpu time column, index:", i, "found in", theLine)
 					}
 				}
 				stats.CpuMap[lineName] = cpuTimes
 			} else {
-                cpu.logger.Debug("Unknown Data", theLine)
+                this.logger.Debug("Unknown Data", theLine)
 			}
 		}
 	}

@@ -11,10 +11,12 @@ func TestNodetool(test *testing.T) {
 
 	config := c.Config{
 		Debug: true,
-		NodetoolFunctions: []string{"notfound"},
+        CassandraConfig: c.CassandraGathererConfig{
+            NodetoolFunctions: []string{"notfound"},
+        },
 	}
 
-	gatherers := g.NewNodetoolMetricGatherers(nil, &config)
+	gatherers := g.NewCassandraMetricGatherers(nil, &config)
 	if len(gatherers) > 0 {
 		test.Errorf("Expecting no gatherers")
 	}
@@ -25,10 +27,12 @@ func TestNodetool(test *testing.T) {
 
 	config = c.Config{
 		Debug: false,
-		NodetoolFunctions: nt.NodetoolAllSupportedFunctions,
+        CassandraConfig: c.CassandraGathererConfig{
+            NodetoolFunctions: nt.NodetoolAllSupportedFunctions,
+        },
 	}
 
-	gatherers = g.NewNodetoolMetricGatherers(nil, &config)
+	gatherers = g.NewCassandraMetricGatherers(nil, &config)
 	for _,gatherer := range gatherers {
 		StandardTest(test, gatherer)
 	}

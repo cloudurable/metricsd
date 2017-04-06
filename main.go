@@ -15,17 +15,17 @@ import (
 
 func main() {
 
-	version := flag.Bool("version", false, "Request Version")
+    version := flag.Bool("version", false, "Request Version")
     vaws := flag.Bool("vaws", false, "Verify AWS Credentials")
     vemail := flag.Bool("vemail", false, "Verify Email Alarmer")
-	configFileName := flag.String("config", "/etc/metricsd.conf", "metrics config file name")
+    configFileName := flag.String("config", "/etc/metricsd.conf", "metrics config file name")
 
-	flag.Parse()
+    flag.Parse()
 
-	if *version { println("0.4.5") } else
+    if *version { println("0.4.5") } else
     if *vaws    { doVerifyAws(configFileName) } else
     if *vemail  { doVerifyEmail(configFileName) } else
-                { run(configFileName) }
+    { run(configFileName) }
 }
 
 func loadConfigForFirstTime(configFileName *string) *c.Config {
@@ -43,7 +43,7 @@ func run(configFileName *string) {
 	config := loadConfigForFirstTime(configFileName)
     logger := c.GetLogger(config.Debug, "main")
 
-    logger.Debug("Init:", c.ObjectToString(config))
+    logger.Debug("Init:", c.ToJsonLabeledString(config))
     interval, intervalConfigRefresh := readRunConfig(config)
 
     // services
@@ -53,9 +53,9 @@ func run(configFileName *string) {
     terminator := makeTerminateChannel()
 
     // workers
-    gatherers := g.LoadGatherers(config)
-    repeaters := r.LoadRepeaters(config)
-    alarmers  := a.LoadAlarmers(config)
+    gatherers := g.NewGatherers(config)
+    repeaters := r.NewRepeaters(config)
+    alarmers  := a.NewAlarmers(config)
 
     // timers
 	timer := time.NewTimer(interval)
@@ -73,12 +73,13 @@ func run(configFileName *string) {
 			if configChanged {
 				configChanged = false
                 logger = c.GetLogger(config.Debug, "main")
-				gatherers = g.LoadGatherers(config)
-                repeaters = r.LoadRepeaters(config)
-                alarmers = a.LoadAlarmers(config)
+				gatherers = g.NewGatherers(config)
+                repeaters = r.NewRepeaters(config)
+                alarmers = a.NewAlarmers(config)
 			}
-			metrics := collectMetrics(gatherers, logger)
-			processMetrics(metrics, repeaters, alarmers, config, logger)
+			metrics := gatherers.Gather()
+            repeaters.Repeat(metrics)
+            alarmers.Alarm(metrics)
 			timer.Reset(interval)
 
 		case <-configTimer.C:
@@ -90,7 +91,7 @@ func run(configFileName *string) {
                     configChanged = true
 					config = newConfig
 					interval, intervalConfigRefresh = readRunConfig(config)
-                    logger.Debug("Changed:", c.ObjectToString(config))
+                    logger.Debug("Changed:", c.ToJsonLabeledString(config))
 				} else {
                     logger.Debug("Same Config")
 				}
@@ -108,48 +109,6 @@ func makeTerminateChannel() <-chan os.Signal {
 
 func readRunConfig(config *c.Config) (time.Duration, time.Duration){
 	return config.TimePeriodSeconds * time.Second, config.ReadConfigSeconds * time.Second
-}
-
-func processMetrics(metrics []c.Metric, repeaters []c.MetricsRepeater, alarmers []c.MetricsAlarmer, context *c.Config, logger l.Logger) {
-	for _, r := range repeaters {
-		if r.RepeatForContext() {
-			if err := r.ProcessMetrics(context, metrics); err != nil {
-				logger.PrintError("Repeater failed", err)
-			}
-		}
-	}
-
-	noIdContext := context.GetNoIdContext()
-
-	for _, r := range repeaters {
-		if r.RepeatForNoIdContext() {
-			if err := r.ProcessMetrics(noIdContext, metrics); err != nil {
-				logger.PrintError("Repeater failed", err)
-			}
-		}
-	}
-
-    for _, a := range alarmers {
-        if err := a.ProcessMetrics(context, metrics); err != nil {
-            logger.PrintError("Alarmer failed", err)
-        }
-    }
-}
-
-func collectMetrics(gatherers []c.MetricsGatherer, logger l.Logger) []c.Metric {
-
-	metrics := []c.Metric{}
-
-	for _, gatherer := range gatherers {
-		more, err := gatherer.GetMetrics()
-		if err != nil {
-			logger.PrintError("Problem getting metrics from gatherer", err)
-		} else if more != nil {
-            metrics = append(metrics, more...)
-        }
-	}
-
-	return metrics
 }
 
 func doVerifyAws(configFileName *string) {

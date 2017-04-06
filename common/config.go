@@ -10,89 +10,141 @@ import (
 
 type Config struct {
     Env               string        `hcl:"env"`
-    Local             bool          `hcl:"local"`
     Debug             bool          `hcl:"debug"`
     TimePeriodSeconds time.Duration `hcl:"interval_seconds"`
     ReadConfigSeconds time.Duration `hcl:"interval_read_config_seconds"`
+    NameSpace         string        `hcl:"namespace"`
 
     Repeaters []string `hcl:"repeaters"`
     Gatherers []string `hcl:"gatherers"`
     Alarmers []string  `hcl:"alarmers"`
 
-    AWSRegion          string `hcl:"aws_region"`
-    ServerRole         string `hcl:"server_role"`
-    IpAddress          string `hcl:"ip_address"`
-    EC2InstanceId      string `hcl:"ec2_instance_id"`
-    EC2InstanceNameTag string `hcl:"ec2_instance_name"`
-    NameSpace          string `hcl:"namespace"`
+    AwsConfig       AwsConfig   `hcl:"aws"`
+    SmtpConfig      SmtpConfig  `hcl:"smtp"`
 
-    SmtpHost        string `hcl:"smtp_host"`
-    SmtpPort        int    `hcl:"smtp_port"`
-    SmtpUsername    string `hcl:"smtp_username"`
-    SmtpPassword    string `hcl:"smtp_password"`
-    SmtpFromAddress string `hcl:"smtp_from_address"`
-    SmtpIgnoreCert  bool   `hcl:"smtp_ignore_cert"`
+    AwsAlarmerConfig AwsAlarmerConfig `hcl:"aws_alarmer"`
+    EmailAlarmerConfig EmailAlarmerConfig `hcl:"email_alarmer"`
 
-    EmailAlarmTo              []string `hcl:"email_alarm_to"`
-    EmailAlarmIntervalSeconds int      `hcl:"email_alarm_interval_seconds"`
-
-    DiskCommand        string   `hcl:"disk_command"`
-    DiskFileSystems    []string `hcl:"disk_file_systems"`
-    DiskFields         []string `hcl:"disk_fields"`
-    DiskAlarmThreshold int      `hcl:"disk_alarm_threshold"`
-
-    CpuProcStat    string `hcl:"cpu_proc_stat"`
-    CpuReportZeros bool   `hcl:"cpu_report_zeros"`
-
-    FreeCommand string `hcl:"free_command"`
-
-    CqlshCommand      string   `hcl:"cqlsh_command"`
-
-    NodetoolCommand   string   `hcl:"nodetool_command"`
-    NodetoolFunctions []string `hcl:"nodetool_functions"`
+    DiskConfig      DiskGathererConfig  `hcl:"disk"`
+    CpuConfig       CpuGathererConfig   `hcl:"cpu"`
+    FreeConfig      FreeGathererConfig  `hcl:"free"`
+    CassandraConfig CassandraGathererConfig `hcl:"cassandra"`
 }
 
 func ConfigEquals(c1 *Config, c2 *Config) bool {
     return c1.Env == c2.Env &&
-        c1.Local == c2.Local &&
         c1.Debug == c2.Debug &&
-        c1.NameSpace == c2.NameSpace &&
-
         c1.TimePeriodSeconds == c2.TimePeriodSeconds &&
         c1.ReadConfigSeconds == c2.ReadConfigSeconds &&
+        c1.NameSpace == c2.NameSpace &&
 
         StringArraysEqual(c1.Repeaters, c2.Repeaters) &&
         StringArraysEqual(c1.Gatherers, c2.Gatherers) &&
         StringArraysEqual(c1.Alarmers, c2.Alarmers) &&
 
-        c1.AWSRegion == c2.AWSRegion &&
+        AwsConfigEquals(&c1.AwsConfig, &c2.AwsConfig) &&
+        SmtpConfigEquals(&c1.SmtpConfig, &c2.SmtpConfig) &&
+
+        EmailAlarmerConfigEquals(&c1.EmailAlarmerConfig, &c2.EmailAlarmerConfig) &&
+        DiskGathererConfigEquals(&c1.DiskConfig, &c2.DiskConfig) &&
+        CpuGathererConfigEquals(&c1.CpuConfig, &c2.CpuConfig) &&
+        FreeGathererConfigEquals(&c1.FreeConfig, &c2.FreeConfig) &&
+        CassandraGathererConfigEquals(&c1.CassandraConfig, &c2.CassandraConfig)
+}
+
+type AwsConfig struct {
+    Local              bool   `hcl:"local"`
+    Region             string `hcl:"region"`
+    ServerRole         string `hcl:"server_role"`
+    EC2InstanceId      string `hcl:"ec2_instance_id"`
+    EC2InstanceNameTag string `hcl:"ec2_instance_name"`
+    IpAddress          string `hcl:"ip_address"`
+}
+
+func AwsConfigEquals(c1 *AwsConfig, c2 *AwsConfig) bool {
+    return c1.Local == c2.Local &&
+        c1.Region == c2.Region &&
         c1.ServerRole == c2.ServerRole &&
-        c1.IpAddress == c2.IpAddress &&
         c1.EC2InstanceId == c2.EC2InstanceId &&
         c1.EC2InstanceNameTag == c2.EC2InstanceNameTag &&
+        c1.IpAddress == c2.IpAddress
+}
 
-        c1.SmtpHost == c2.SmtpHost &&
-        c1.SmtpPort == c2.SmtpPort &&
-        c1.SmtpUsername == c2.SmtpUsername &&
-        c1.SmtpPassword == c2.SmtpPassword &&
-        c1.SmtpFromAddress == c2.SmtpFromAddress &&
-        c1.SmtpIgnoreCert == c2.SmtpIgnoreCert &&
+type SmtpConfig struct {
+    Host        string `hcl:"host"`
+    Port        int    `hcl:"port"`
+    Username    string `hcl:"username"`
+    Password    string `hcl:"password"`
+    FromAddress string `hcl:"from_address"`
+    IgnoreCert  bool   `hcl:"ignore_cert"`
+}
 
-        StringArraysEqual(c1.EmailAlarmTo, c2.EmailAlarmTo) &&
-        c1.EmailAlarmIntervalSeconds == c2.EmailAlarmIntervalSeconds &&
+func SmtpConfigEquals(c1 *SmtpConfig, c2 *SmtpConfig) bool {
+    return c1.Host == c2.Host &&
+        c1.Port == c2.Port &&
+        c1.Username == c2.Username &&
+        c1.Password == c2.Password &&
+        c1.FromAddress == c2.FromAddress &&
+        c1.IgnoreCert == c2.IgnoreCert
+}
 
-        c1.DiskCommand == c2.DiskCommand &&
-        StringArraysEqual(c1.DiskFileSystems, c2.DiskFileSystems) &&
-        StringArraysEqual(c1.DiskFields, c2.DiskFields) &&
-        c1.DiskAlarmThreshold == c2.DiskAlarmThreshold &&
+type AwsAlarmerConfig struct {
+    DiskAlarmArns   []string `hcl:"disk_alarm_arns"`
+}
 
-        c1.CpuProcStat == c2.CpuProcStat &&
-        c1.CpuReportZeros == c2.CpuReportZeros &&
+func AwsAlarmerConfigEquals(c1 *AwsAlarmerConfig, c2 *AwsAlarmerConfig) bool {
+    return StringArraysEqual(c1.DiskAlarmArns, c2.DiskAlarmArns)
+}
 
-        c1.FreeCommand == c2.FreeCommand &&
+type EmailAlarmerConfig struct {
+    ResendIntervalSeconds int      `hcl:"resend_interval_seconds"`
+    DiskAlarmTos          []string `hcl:"disk_alarm_tos"`
+}
 
-        c1.NodetoolCommand == c2.NodetoolCommand &&
-        StringArraysEqual(c1.NodetoolFunctions, c2.NodetoolFunctions)
+func EmailAlarmerConfigEquals(c1 *EmailAlarmerConfig, c2 *EmailAlarmerConfig) bool {
+    return c1.ResendIntervalSeconds == c2.ResendIntervalSeconds &&
+        StringArraysEqual(c1.DiskAlarmTos, c2.DiskAlarmTos)
+}
+
+type DiskGathererConfig struct {
+    Command          string   `hcl:"command"`
+    FileSystems      []string `hcl:"file_systems"`
+    Fields           []string `hcl:"fields"`
+    AlarmThreshold   int      `hcl:"alarm_threshold"`
+}
+
+func DiskGathererConfigEquals(c1 *DiskGathererConfig, c2 *DiskGathererConfig) bool {
+    return c1.Command == c2.Command &&
+        StringArraysEqual(c1.FileSystems, c2.FileSystems) &&
+        StringArraysEqual(c1.Fields, c2.Fields) &&
+        c1.AlarmThreshold == c2.AlarmThreshold
+}
+
+type CpuGathererConfig struct {
+    ProcStat    string `hcl:"proc_stat"`
+    ReportZeros bool   `hcl:"report_zeros"`
+}
+
+func CpuGathererConfigEquals(c1 *CpuGathererConfig, c2 *CpuGathererConfig) bool {
+    return c1.ProcStat == c2.ProcStat && c1.ReportZeros == c2.ReportZeros
+}
+
+type FreeGathererConfig struct {
+    Command string `hcl:"command"`
+}
+
+func FreeGathererConfigEquals(c1 *FreeGathererConfig, c2 *FreeGathererConfig) bool {
+    return c1.Command == c2.Command
+}
+
+type CassandraGathererConfig struct {
+    CqlshCommand      string   `hcl:"cqlsh_command"`
+    NodetoolCommand   string   `hcl:"nodetool_command"`
+    NodetoolFunctions []string `hcl:"nodetool_functions"`
+}
+
+func CassandraGathererConfigEquals(c1 *CassandraGathererConfig, c2 *CassandraGathererConfig) bool {
+    return c1.CqlshCommand == c2.CqlshCommand && c1.NodetoolCommand == c2.NodetoolCommand && StringArraysEqual(c1.NodetoolFunctions, c2.NodetoolFunctions)
 }
 
 func ReadConfigString(label string, configured string, dflt string, logger l.Logger) string {
@@ -167,50 +219,4 @@ func LoadConfigFromString(data string, logger l.Logger) (*Config, error) {
 
     return config, nil
 
-}
-
-func (config *Config) GetEnv() string {
-    return config.Env
-}
-
-func (config *Config) GetNameSpace() string {
-    return config.NameSpace
-}
-
-func (config *Config) GetRole() string {
-    return config.ServerRole
-}
-
-func (config *Config) SendId() bool {
-    return true
-}
-
-func (config *Config) GetNoIdContext() MetricContext {
-    return context{
-        env:       config.Env,
-        namespace: config.NameSpace,
-        role:      config.ServerRole,
-    }
-}
-
-type context struct {
-    env       string
-    namespace string
-    role      string
-}
-
-func (c context) GetEnv() string {
-    return c.env
-}
-
-func (c context) GetNameSpace() string {
-    return c.namespace
-}
-
-func (c context) GetRole() string {
-    return c.role
-}
-
-func (c context) SendId() bool {
-    return false
 }

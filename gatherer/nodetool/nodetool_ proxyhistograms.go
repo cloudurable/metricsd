@@ -30,12 +30,12 @@ func ProxyHistograms(nodetoolCommand string) ([]c.Metric, error) {
 		if index > 2 && line != c.EMPTY {
 			valuesOnly := strings.Fields(line)
 			prefix := "ntPh" + valuesOnly[0]
-			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[1], prefix + "ReadLatency", c.PROVIDER_NODETOOL))
-			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[2], prefix + "WriteLatency", c.PROVIDER_NODETOOL))
-			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[3], prefix + "RangeLatency", c.PROVIDER_NODETOOL))
-			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[4], prefix + "CASReadLatency", c.PROVIDER_NODETOOL))
-			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[5], prefix + "CASWriteLatency", c.PROVIDER_NODETOOL))
-			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[6], prefix + "ViewWriteLatency", c.PROVIDER_NODETOOL))
+			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[1], prefix + "ReadLatency", c.PROVIDER_CASSANDRA))
+			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[2], prefix + "WriteLatency", c.PROVIDER_CASSANDRA))
+			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[3], prefix + "RangeLatency", c.PROVIDER_CASSANDRA))
+			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[4], prefix + "CASReadLatency", c.PROVIDER_CASSANDRA))
+			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[5], prefix + "CASWriteLatency", c.PROVIDER_CASSANDRA))
+			metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, valuesOnly[6], prefix + "ViewWriteLatency", c.PROVIDER_CASSANDRA))
 		}
 	}
 

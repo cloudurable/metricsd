@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 	"math"
-	"fmt"
+    "encoding/json"
+    "reflect"
 )
 
 // ========================================================================================================================
@@ -99,77 +100,6 @@ func Float64ToStringPrecise(f float64, prec int) string {
 }
 
 // ========================================================================================================================
-// JSON STUFF
-// ========================================================================================================================
-func Jstr(name string, v string, last bool) string {
-	if last {
-		return QUOTE + name + QUOTE_COLON_SPACE_QUOTE + v + QUOTE
-	}
-	return QUOTE + name + QUOTE_COLON_SPACE_QUOTE + v + QUOTE_COMMA_SPACE
-}
-
-func Jbyte(name string, v byte, last bool) string {
-	return jnum(name, ByteToString(v), last)
-}
-
-func Jdur(name string, v time.Duration, last bool) string {
-	return jnum(name, DurationToString(v), last)
-}
-
-func Jint64(name string, v int64, last bool) string {
-	return jnum(name, Int64ToString(v), last)
-}
-
-func Jfloat64(name string, v float64, last bool) string {
-	return jnum(name, Float64ToString(v), last)
-}
-
-func Jfloat64Precise(name string, v float64, prec int, last bool) string {
-	return jnum(name, Float64ToStringPrecise(v, prec), last)
-}
-
-func jnum(name string, numStr string, last bool) string {
-	if last {
-		return QUOTE + name + QUOTE_COLON_SPACE + numStr
-	}
-	return QUOTE + name + QUOTE_COLON_SPACE + numStr + COMMA_SPACE
-}
-
-func Jbool(name string, v bool, last bool) string {
-	if last {
-		return QUOTE + name + QUOTE_COLON_SPACE + BoolToString(v)
-	}
-	return QUOTE + name + QUOTE_COLON_SPACE + BoolToString(v) + COMMA_SPACE
-}
-
-func Junquoted(name string, v string, last bool) string {
-	if last {
-		return QUOTE + name + QUOTE_COLON_SPACE + v
-	}
-	return QUOTE + name + QUOTE_COLON_SPACE + v + COMMA_SPACE
-}
-
-func Jstrarr(name string, v []string, last bool) string {
-	if v == nil || len(v) == 0 {
-		return Junquoted(name, "[]", last)
-	}
-
-	temp := EMPTY
-	lastStr := COMMA
-	if last {
-		lastStr = EMPTY
-	}
-
-	lastIndex := len(v) - 1
-	for i := 0; i < lastIndex; i++ {
-		temp = temp + QUOTE + v[i] + QUOTE_COMMA_SPACE
-	}
-	temp = temp + QUOTE + v[lastIndex] + QUOTE
-
-	return QUOTE + name + QUOTE_COLON_SPACE + OPEN_BRACE + temp + CLOSE_BRACE + lastStr
-}
-
-// ========================================================================================================================
 // MATH
 // ========================================================================================================================
 func Round(f float64) int64 {
@@ -253,6 +183,36 @@ func StringArraysEqual(sa1 []string, sa2 []string) bool {
 // ========================================================================================================================
 // STRING MANIPULATION
 // ========================================================================================================================
+
+// ========================================================================================================================
+// JSON STUFF
+// ========================================================================================================================
+func ToJson(v interface{}) string{
+    j, err := json.Marshal(v)
+    if err == nil {
+        return string(j)
+    }
+
+    panic(err)
+}
+
+func ToJsonFormatted(v interface{}) string{
+    j, err := json.MarshalIndent(v, "", "    ")
+    if err == nil {
+        return string(j)
+    }
+
+    panic(err)
+}
+
+func ToJsonLabeledString(v interface{}) string {
+    return "{\"" + ObjectPrefix(v) + "\": " + ToJson(v) + "}"
+}
+
+func ToJsonLabeledFormattedString(v interface{}) string {
+    return "{\"" + ObjectPrefix(v) + "\": " + ToJsonFormatted(v) + "}"
+}
+
 func UpFirst(s string) string {
 	return strings.ToUpper(s[0:1]) + s[1:]
 }
@@ -269,16 +229,14 @@ func ArrayToString(a []string) string {
 	return result + CLOSE_BRACE
 }
 
-func ObjectToString(object interface{}) string {
-	s := fmt.Sprintf("%#v", object)
-	open := strings.Index(s, "{")
-	dot := strings.Index(s, DOT)
-	if dot != -1 && dot < open {
-		s = s[dot+1:]
-	}
-	s = strings.Replace(s, "[]string", "[]", -1)
-	s = strings.Replace(s, "(nil)", EMPTY, -1)
-	return s
+func ObjectPrefix(v interface{}) string {
+    typeOf := reflect.TypeOf(v)
+    if typeOf == nil {
+        return "<i>"
+    }
+    str := typeOf.String()
+    at := strings.LastIndex(str, DOT)
+    return str[at+1:]
 }
 
 func ToSizeMetricType(size string) MetricType {

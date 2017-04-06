@@ -21,7 +21,7 @@ func Cfstats(nodetoolCommand string) ([]c.Metric, error) {
 		if line != c.EMPTY  && !strings.HasPrefix(line, "---") {
 			if strings.HasPrefix(line, "Total number") {
 				value := c.SplitGetLastField(line)
-				metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, value, "ntCfTotalTables", c.PROVIDER_NODETOOL))
+				metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, value, "ntCfTotalTables", c.PROVIDER_CASSANDRA))
 			} else {
 				fields := fields(line)
 				if strings.HasPrefix(fields[0], "Keyspace") {
@@ -44,9 +44,9 @@ func Cfstats(nodetoolCommand string) ([]c.Metric, error) {
 						name := cfName(fields, lastIndex, currentKeyspace, currentTable)
 						var metric c.Metric
 						if strings.Contains(value, c.DOT) {
-							metric = *c.NewMetricFloatString(mt, value, name, c.PROVIDER_NODETOOL)
+							metric = *c.NewMetricFloatString(mt, value, name, c.PROVIDER_CASSANDRA)
 						} else {
-							metric = *c.NewMetricIntString(mt, value, name, c.PROVIDER_NODETOOL)
+							metric = *c.NewMetricIntString(mt, value, name, c.PROVIDER_CASSANDRA)
 						}
 						metrics = append(metrics, metric)
 					}
