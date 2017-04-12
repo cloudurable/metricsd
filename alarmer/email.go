@@ -1,7 +1,7 @@
 package alarmer
 
 import (
-	lg "github.com/cloudurable/simplelog/logging"
+    lg "github.com/cloudurable/simplelog/logging"
     c "github.com/cloudurable/metricsd/common"
     s "github.com/cloudurable/metricsd/service"
     "time"
@@ -9,10 +9,12 @@ import (
     "os"
     "crypto/md5"
     "encoding/hex"
+    "text/template"
+    "bytes"
 )
 
 type EmailMetricAlarmer struct {
-	logger                lg.Logger
+    logger                lg.Logger
     config                *c.Config
     awsContext            *c.AwsContext
     alarmMap              map[string]time.Time
@@ -22,8 +24,8 @@ type EmailMetricAlarmer struct {
 
 func (this *EmailMetricAlarmer) Verify() bool {
     t := time.Now()
-    subject := fmt.Sprintf("MetricsD verify %s", t.Format(c.STD_TIME_FORMAT))
-    body := fmt.Sprintf("This is a MetricsD verification email, sent from '%s' at %s", this.awsContext.EC2InstanceId, t.Format(c.STD_TIME_FORMAT))
+    subject := fmt.Sprintf("MetricsD verify %s", t.Format(time.RFC1123))
+    body := fmt.Sprintf("This is a MetricsD verification email, sent from '%s' at %s", this.awsContext.EC2InstanceId, t.Format(time.RFC1123))
     return this.send(subject, body)
 }
 
@@ -50,11 +52,33 @@ func (this *EmailMetricAlarmer) Alarm(metrics []c.Metric) error {
                 newSendTimes[hash] = newSendTime
 
                 if shouldSend {
-                    subject := fmt.Sprintf("MetricsD alarm.  Instance'%s'  Provider'%s'  Name'%s'", this.awsContext.EC2InstanceId, m.Provider, m.Name)
-                    m.When.Format(c.STD_TIME_FORMAT)
-                    body := "MetricsD alarm\r\n" + m.MetricStringFormatted()
+                    data := struct {
+                        Namespace string
+                        Environment string
+                        Role string
+                        InstanceId string
+                        Region string
+
+                        Description string
+                        MetricName string
+                        Value string
+                        Threshold string
+                        When string
+                    } {
+                        this.config.NameSpace, this.config.Env, this.awsContext.ServerRole, this.awsContext.EC2InstanceId, this.awsContext.Region,
+                        m.Alarm.Description, m.Name, m.StrValue, c.Float64ToString(m.Alarm.Threshold), m.When.Format(time.RFC1123),
+                    }
+                    fmt.Println("%v", data)
+
+                    subject := fmt.Sprintf(subjectTemplate, data.MetricName, data.InstanceId, data.Region)
+                    tmpl, err := template.New("email").Parse(bodyTemplate)
+                    if err != nil { panic(err) }
+                    body := new(bytes.Buffer)
+                    err = tmpl.Execute(body, data)
+                    if err != nil { panic(err) }
+
                     this.logger.Debug("Sending alarm email:", subject)
-                    if this.send(subject, body) {
+                    if this.send(subject, body.String()) {
                         this.alarmMap[hash] = newSendTimes[hash]
                     } else {
                         // didn't send make sure it will if it alarms again
@@ -86,9 +110,9 @@ func hash(m c.Metric) string {
 func (this *EmailMetricAlarmer) Name() string { return this.logger.Name() }
 
 func NewEmailMetricAlarmer(config *c.Config) *EmailMetricAlarmer {
-    logger := c.EnsureLogger(nil, config.Debug, c.ALARMER + c.ALARMER_AWS)
+    logger := c.EnsureLogger(nil, config.Debug, c.ALARMER + c.ALARMER_EMAIL)
 
-    alarmTo := 	c.ReadConfigStringArray("email alarm to", []string{"FIX ME !!! config.EmailAlarmTo"}, []string{}, logger, true)
+    alarmTo := 	c.ReadConfigStringArray("email alarm to", config.EmailAlarmerConfig.DiskAlarmTos, []string{}, logger, true)
     if len(alarmTo) == 0 {
         logger.Error("No email alarm To addresses are configured")
         os.Exit(501)
@@ -110,3 +134,22 @@ func (this *EmailMetricAlarmer) send(subject string, body string) bool {
     mailer := s.NewSmtp(this.logger, this.config)
     return mailer.SendEmail(this.to, subject, body)
 }
+
+var subjectTemplate = `Subject: ALARM for %s on %s" in %s` // name, instanceId, region
+
+var bodyTemplate = `You are receiving this email because your MetricsD {{.MetricName}} "{{.Description}}" on {{.InstanceId}} in {{.Region}} is over the threshold ({{.Threshold}}) at {{.When}}.
+
+Instance Details:
+- Namespace: {{.Namespace}}
+- Role: {{.Role}}
+- Environment: {{.Environment}}
+- EC2 Instance Id: {{.InstanceId}}
+
+Metric Details:
+- Description: {{.Description}}
+- Metric Name: {{.MetricName}}
+- Value: {{.Value}}
+- Threshold: {{.Threshold}}
+- Timestamp: {{.When}}
+
+Please do not reply directly to this email.`

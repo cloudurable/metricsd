@@ -22,6 +22,7 @@ func NewAlarmers(config *c.Config) *Alarmers {
             if alarmer != nil {
                 alarmers = append(alarmers, alarmer)
             }
+
         case c.ALARMER_EMAIL:
             alarmer := NewEmailMetricAlarmer(config)
             if alarmer != nil {
