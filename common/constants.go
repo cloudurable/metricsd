@@ -42,6 +42,7 @@ const (
     REPEATER        = "repeater-"
     REPEATER_AWS    = "aws"
     REPEATER_LOG    = "log"
+    REPEATER_KAFKA  = "kafka"
 )
 
 const (

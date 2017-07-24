@@ -19,8 +19,7 @@ func Statuses(nodetoolCommand string) ([]c.Metric, error) {
 		if err != nil {
 			return nil, err
 		}
-		name := "ntStatus" + c.UpFirst(ntfun[6:])
-		metrics = append(metrics, *c.NewMetricString(strings.TrimSuffix(output, c.NEWLINE), name, c.PROVIDER_CASSANDRA))
+		metrics = append(metrics, *c.NewMetricString(strings.TrimSuffix(output, c.NEWLINE), "ntStatus", c.UpFirst(ntfun[6:]), c.PROVIDER_CASSANDRA))
 	}
 
 	for _,ntfun := range []string{"version"} {
@@ -28,8 +27,7 @@ func Statuses(nodetoolCommand string) ([]c.Metric, error) {
 		if err != nil {
 			return nil, err
 		}
-		name := "ntStatus" + c.UpFirst(ntfun)
-		metrics = append(metrics, *c.NewMetricString(strings.TrimSuffix(output, c.NEWLINE), name, c.PROVIDER_CASSANDRA))
+		metrics = append(metrics, *c.NewMetricString(strings.TrimSuffix(output, c.NEWLINE), "ntStatus", c.UpFirst(ntfun), c.PROVIDER_CASSANDRA))
 	}
 
 	return metrics, nil

@@ -31,7 +31,7 @@ func (this AwsCloudMetricRepeater) Repeat(metrics []c.Metric) error {
         dimensions := c.CreateDimensions(this.awsContext, this.config, metric.Provider)
 
         datum := &cloudwatch.MetricDatum{
-            MetricName: aws.String(metric.Name),
+            MetricName: aws.String(metric.QualifiedName()),
             Timestamp:  aws.Time(metric.When),
             Dimensions: dimensions,
         }
@@ -40,7 +40,7 @@ func (this AwsCloudMetricRepeater) Repeat(metrics []c.Metric) error {
         datum.Unit = aws.String(metric.Type.Name())
 
 		if this.config.Debug {
-			this.logger.Debugf(debugFormat, metric.Provider, metric.Name, metric.Type, metric.FloatValue, datum.Unit)
+			this.logger.Debugf(debugFormat, metric.Provider, metric.QualifiedName(), metric.Type, metric.FloatValue, datum.Unit)
 		}
 
 		data = append(data, datum)

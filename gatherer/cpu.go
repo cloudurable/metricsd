@@ -75,7 +75,7 @@ func (this *CPUMetricsGatherer) Gather() ([]c.Metric, error) {
 
 func (this *CPUMetricsGatherer) appendCount(metrics []c.Metric, name string, count int64) []c.Metric {
 	if this.reportZeros || count > 0 {
-		metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, count, name, c.PROVIDER_CPU))
+		metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, count, name, c.EMPTY, c.PROVIDER_CPU))
 	}
 	return metrics
 }
@@ -108,8 +108,8 @@ func (this *CPUMetricsGatherer) convertToMetrics(lastTimeStats *CpuStats, nowSta
 		}
 	}
 
-	metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, int64(nowStats.ProcessRunningCount), "cpuProcsRunning", c.PROVIDER_CPU))
-	metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, int64(nowStats.ProcessBlockCount), "cpuProcsBlocked", c.PROVIDER_CPU))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, int64(nowStats.ProcessRunningCount), "cpuProcsRunning", c.EMPTY, c.PROVIDER_CPU))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, int64(nowStats.ProcessBlockCount), "cpuProcsBlocked", c.EMPTY, c.PROVIDER_CPU))
 
 	return metrics
 }

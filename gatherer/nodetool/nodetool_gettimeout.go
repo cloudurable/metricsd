@@ -18,7 +18,7 @@ func Gettimeout(nodetoolCommand string) ([]c.Metric, error) {
 		lines := strings.Split(output, c.NEWLINE)
 		temp := strings.Fields(lines[0])
 		ix := len(temp) - 2
-		metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, temp[ix], "ntTo" + c.UpFirst(timeouttype), c.PROVIDER_CASSANDRA))
+		metrics = append(metrics, *c.NewMetricIntString(c.MT_MILLIS, temp[ix], "ntTo" + c.UpFirst(timeouttype), c.EMPTY, c.PROVIDER_CASSANDRA))
 	}
 
 	return metrics, nil

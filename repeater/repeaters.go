@@ -23,11 +23,17 @@ func NewRepeaters(config *c.Config) *Repeaters {
 				repeaters = append(repeaters, repeater)
 			}
 
-		case c.REPEATER_LOG:
-			repeater := NewLogMetricsRepeater()
-			if repeater != nil {
-				repeaters = append(repeaters, repeater)
-			}
+        case c.REPEATER_LOG:
+            repeater := NewLogMetricsRepeater()
+            if repeater != nil {
+                repeaters = append(repeaters, repeater)
+            }
+
+        case c.REPEATER_KAFKA:
+            repeater := NewKafkaMetricsRepeater(config)
+            if repeater != nil {
+                repeaters = append(repeaters, repeater)
+            }
 		}
 	}
 
@@ -44,8 +50,9 @@ func (this *Repeaters) Repeat(metrics []c.Metric) {
 
 func VerifyRepeater(repeaterName string, logger l.Logger, config *c.Config) {
     switch repeaterName {
-    case c.REPEATER_AWS:     verify(NewAwsCloudMetricRepeater(config), logger)
-    case c.REPEATER_LOG:     verify(NewLogMetricsRepeater(), logger)
+    case c.REPEATER_AWS:   verify(NewAwsCloudMetricRepeater(config), logger)
+    case c.REPEATER_LOG:   verify(NewLogMetricsRepeater(), logger)
+    case c.REPEATER_KAFKA: verify(NewKafkaMetricsRepeater(config), logger)
     }
 }
 

@@ -51,18 +51,18 @@ func appendNsMode(metrics []c.Metric, line string) []c.Metric {
 	case "draining":		code = value_mode_draining
 	case "drained":			code = value_mode_drained
 	}
-	return append(metrics, *c.NewMetricStringCode(c.MT_NONE, codeStr, code, "ntNsMode", c.PROVIDER_CASSANDRA))
+	return append(metrics, *c.NewMetricStringCode(c.MT_NONE, codeStr, code, "ntNsMode", c.EMPTY, c.PROVIDER_CASSANDRA))
 }
 
-func appendNsReadRepair(metrics []c.Metric, line string, columnIndex int, name string) []c.Metric {
-	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, c.SplitGetFieldByIndex(line, columnIndex), name, c.PROVIDER_CASSANDRA))
+func appendNsReadRepair(metrics []c.Metric, line string, columnIndex int, key string) []c.Metric {
+	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, c.SplitGetFieldByIndex(line, columnIndex), key, c.EMPTY, c.PROVIDER_CASSANDRA))
 }
 
 func appendNsPool(metrics []c.Metric, line string, prefix string) []c.Metric {
 	valuesOnly := strings.Fields(line)
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[2], prefix + "Active", c.PROVIDER_CASSANDRA))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[3], prefix + "Pending", c.PROVIDER_CASSANDRA))
-	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[4], prefix + "Completed", c.PROVIDER_CASSANDRA))
-	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[5], prefix + "Dropped", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[2], prefix + "Active", c.EMPTY, c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[3], prefix + "Pending", c.EMPTY, c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[4], prefix + "Completed", c.EMPTY, c.PROVIDER_CASSANDRA))
+	return append(metrics, *c.NewMetricIntString(c.MT_COUNT, valuesOnly[5], prefix + "Dropped", c.EMPTY, c.PROVIDER_CASSANDRA))
 }
 

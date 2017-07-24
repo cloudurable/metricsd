@@ -66,7 +66,7 @@ func (this *EmailMetricAlarmer) Alarm(metrics []c.Metric) error {
                         When string
                     } {
                         this.config.NameSpace, this.config.Env, this.awsContext.ServerRole, this.awsContext.EC2InstanceId, this.awsContext.Region,
-                        m.Alarm.Description, m.Name, m.StrValue, c.Float64ToString(m.Alarm.Threshold), m.When.Format(time.RFC1123),
+                        m.Alarm.Description, m.QualifiedName(), m.StrValue, c.Float64ToString(m.Alarm.Threshold), m.When.Format(time.RFC1123),
                     }
                     fmt.Println("%v", data)
 
@@ -104,7 +104,7 @@ func (this *EmailMetricAlarmer) Alarm(metrics []c.Metric) error {
 
 func hash(m c.Metric) string {
     hasher := md5.New()
-    hasher.Write([]byte(fmt.Sprintf("%d %d %s %s", m.Type, m.Source, m.Name, m.Provider)))
+    hasher.Write([]byte(fmt.Sprintf("%d %d %s %s", m.Type, m.Source, m.QualifiedName(), m.Provider)))
     return hex.EncodeToString(hasher.Sum(nil));
 }
 func (this *EmailMetricAlarmer) Name() string { return this.logger.Name() }

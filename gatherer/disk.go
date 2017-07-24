@@ -138,7 +138,7 @@ func (this *DiskMetricsGatherer) appendDf(metrics []c.Metric, line string) []c.M
 
     alarm := upct >= this.diskAlarmThreshold
     if alarm {
-        m := *c.NewMetricFloat(c.MT_PERCENT, upct, "diskUsedPct:" + name, c.PROVIDER_DISK)
+        m := *c.NewMetricFloat(c.MT_PERCENT, upct, "diskUsedPct", name, c.PROVIDER_DISK)
         m.Alarm = c.MetricAlarm{
             Description: "Disk Used Pct Alarm",
             Threshold: float64(this.diskAlarmThreshold),
@@ -154,21 +154,21 @@ func (this *DiskMetricsGatherer) appendDf(metrics []c.Metric, line string) []c.M
 	for _,field := range this.fields {
 		switch field {
 		case DiskField_total:
-			metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, total, "diskTotal:" + name, c.PROVIDER_DISK))
+			metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, total, "diskTotal", name, c.PROVIDER_DISK))
 		case DiskField_used:
-			metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "diskUsed:" + name, c.PROVIDER_DISK))
+			metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, used, "diskUsed", name, c.PROVIDER_DISK))
 		case DiskField_available:
-            metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, available, "diskAvailable:"+name, c.PROVIDER_DISK))
+            metrics = append(metrics, *c.NewMetricInt(c.MT_SIZE_KB, available, "diskAvailable", name, c.PROVIDER_DISK))
 		case DiskField_usedpct:
             if !alarm { // otherwise it was already taken care of
-                metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, upct, "diskUsedPct:" + name, c.PROVIDER_DISK))
+                metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, upct, "diskUsedPct",  name, c.PROVIDER_DISK))
             }
 		case DiskField_availablepct:
-			metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, apct, "diskAvailPct:" + name, c.PROVIDER_DISK))
+			metrics = append(metrics, *c.NewMetricFloat(c.MT_PERCENT, apct, "diskAvailPct", name, c.PROVIDER_DISK))
 		case DiskField_capacitypct:
-			metrics = append(metrics, *c.NewMetricInt(c.MT_PERCENT, capacity, "diskCapacityPct:" + name, c.PROVIDER_DISK))
+			metrics = append(metrics, *c.NewMetricInt(c.MT_PERCENT, capacity, "diskCapacityPct", name, c.PROVIDER_DISK))
 		case DiskField_mount:
-			metrics = append(metrics, *c.NewMetricString(mount, "diskAvailMount:" + name, c.PROVIDER_DISK))
+			metrics = append(metrics, *c.NewMetricString(mount, "diskAvailMount", name, c.PROVIDER_DISK))
 		}
 	}
 

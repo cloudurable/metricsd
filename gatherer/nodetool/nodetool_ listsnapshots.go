@@ -43,19 +43,19 @@ func ListSnapshots(nodetoolCommand string) ([]c.Metric, error) {
 		if index > 2 && line != c.EMPTY {
 			vals := strings.Fields(line)
 			if len(vals) == 7 {
-				metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, vals[1], name("Keyspace", vals[0]), c.PROVIDER_CASSANDRA))
-				metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, vals[2], name("ColumnFamily", vals[0]), c.PROVIDER_CASSANDRA))
-				metrics = append(metrics, *c.NewMetricIntString(c.ToSizeMetricType(vals[4]), vals[3], name("TrueSize", vals[0]), c.PROVIDER_CASSANDRA))
-				metrics = append(metrics, *c.NewMetricIntString(c.ToSizeMetricType(vals[6]), vals[5], name("SizeOnDisk", vals[0]), c.PROVIDER_CASSANDRA))
+				metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, vals[1], key("Keyspace"), vals[0], c.PROVIDER_CASSANDRA))
+				metrics = append(metrics, *c.NewMetricIntString(c.MT_MICROS, vals[2], key("ColumnFamily"), vals[0], c.PROVIDER_CASSANDRA))
+				metrics = append(metrics, *c.NewMetricIntString(c.ToSizeMetricType(vals[4]), vals[3], key("TrueSize"), vals[0], c.PROVIDER_CASSANDRA))
+				metrics = append(metrics, *c.NewMetricIntString(c.ToSizeMetricType(vals[6]), vals[5], key("SizeOnDisk"), vals[0], c.PROVIDER_CASSANDRA))
 			}
 		}
 	}
-	metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, snapCount, "ntSnapCount", c.PROVIDER_CASSANDRA))
+	metrics = append(metrics, *c.NewMetricInt(c.MT_COUNT, snapCount, "ntSnapCount", c.EMPTY, c.PROVIDER_CASSANDRA))
 
 	return metrics, nil
 }
 
-func name(name string, snapName string) string {
-	return "ntSnap" + name + c.COLON + snapName
+func key(name string) string {
+	return "ntSnap" + name
 }
 

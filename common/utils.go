@@ -187,22 +187,30 @@ func StringArraysEqual(sa1 []string, sa2 []string) bool {
 // ========================================================================================================================
 // JSON STUFF
 // ========================================================================================================================
-func ToJson(v interface{}) string{
+func ToJsonBytes(v interface{}) []byte {
     j, err := json.Marshal(v)
     if err == nil {
-        return string(j)
+        return j
+    }
+
+    panic(err)
+}
+
+func ToJson(v interface{}) string{
+    return string(ToJsonBytes(v))
+}
+
+func ToJsonFormattedBytes(v interface{}) []byte {
+    j, err := json.MarshalIndent(v, "", "    ")
+    if err == nil {
+        return j
     }
 
     panic(err)
 }
 
 func ToJsonFormatted(v interface{}) string{
-    j, err := json.MarshalIndent(v, "", "    ")
-    if err == nil {
-        return string(j)
-    }
-
-    panic(err)
+    return string(ToJsonFormatted(v))
 }
 
 func ToJsonLabeledString(v interface{}) string {

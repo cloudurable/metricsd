@@ -33,7 +33,7 @@ func (this *AwsCloudMetricAlarmer) Alarm(metrics []c.Metric) error {
                 if this.diskAlarmArns != nil && len(this.diskAlarmArns) > 0 {
                     alarmActions = aws.StringSlice(this.diskAlarmArns)
                 }
-                alarmName := fmt.Sprintf("%s.%s.%s", this.config.NameSpace, this.awsContext.EC2InstanceId, m.Name)
+                alarmName := fmt.Sprintf("%s.%s.%s", this.config.NameSpace, this.awsContext.EC2InstanceId, m.QualifiedName())
 
                 putInput := &cloudwatch.PutMetricAlarmInput{
                     ActionsEnabled:     aws.Bool(true),
@@ -43,7 +43,7 @@ func (this *AwsCloudMetricAlarmer) Alarm(metrics []c.Metric) error {
                     ComparisonOperator: aws.String(m.Alarm.Comparison.Name()),
                     Dimensions:         dimensions,
                     EvaluationPeriods:  aws.Int64(m.Alarm.EvaluationPeriods),
-                    MetricName:         aws.String(m.Name),
+                    MetricName:         aws.String(m.QualifiedName()),
                     Namespace:          aws.String(this.config.NameSpace),
                     Period:             aws.Int64(m.Alarm.PeriodSeconds),
                     Statistic:          aws.String(cloudwatch.StatisticAverage),

@@ -11,7 +11,7 @@ type LogMetricsRepeater struct {
 
 func (this LogMetricsRepeater) Repeat(metrics []c.Metric) error {
 	for _, m := range metrics {
-		this.logger.Println(m.MetricString())
+		this.logger.Println(c.ToJson(m))
 	}
 	return nil
 }

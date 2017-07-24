@@ -20,6 +20,7 @@ type Config struct {
     Alarmers []string  `hcl:"alarmers"`
 
     AwsConfig       AwsConfig   `hcl:"aws"`
+    KafkaConfig     KafkaConfig `hcl:"kafka"`
     SmtpConfig      SmtpConfig  `hcl:"smtp"`
 
     AwsAlarmerConfig AwsAlarmerConfig `hcl:"aws_alarmer"`
@@ -68,6 +69,18 @@ func AwsConfigEquals(c1 *AwsConfig, c2 *AwsConfig) bool {
         c1.EC2InstanceId == c2.EC2InstanceId &&
         c1.EC2InstanceNameTag == c2.EC2InstanceNameTag &&
         c1.IpAddress == c2.IpAddress
+}
+
+type KafkaConfig struct {
+    ClusterAddresses []string `hcl:"cluster_addresses"`
+    Topic              string `hcl:"topic"`
+    Partitions         int `hcl:"partitions"`
+}
+
+func KafkaConfigEquals(c1 *KafkaConfig, c2 *KafkaConfig) bool {
+    return StringArraysEqual(c1.ClusterAddresses, c2.ClusterAddresses) &&
+        c1.Topic == c2.Topic &&
+        c1.Partitions == c2.Partitions
 }
 
 type SmtpConfig struct {
